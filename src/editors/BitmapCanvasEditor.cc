@@ -59,7 +59,8 @@ enum {
 const int TOOLMARKER_ID = 9999;
 
 
-enum { ACC_ACTIVATE = 1, ACC_SELECT_TILE, ACC_QUICK_COLORPICK, ACC_SECCOL,
+enum { ACC_ACTIVATE = 1, ACC_SELECT_TILE, 
+       ACC_COLORPICK_FG, ACC_COLORPICK_BG, ACC_COLORPICK_QUICK, ACC_SECCOL,
        ACC_MOD_SQUARE };
 
 
@@ -75,7 +76,9 @@ BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	// add accelerators
 	accAdd( ACC_ACTIVATE          , "activate"         , 1 );
 	accAdd( ACC_SELECT_TILE       , "select/tile"      , 0, 0, MOD_CTRL );
-	accAdd( ACC_QUICK_COLORPICK   , "colorpick/quick"  , 3 );
+	accAdd( ACC_COLORPICK_FG      , "colorpick/fg"     , 1 );
+	accAdd( ACC_COLORPICK_BG      , "colorpick/bg"     , 3 );
+	accAdd( ACC_COLORPICK_QUICK   , "colorpick/quick"  , 3 );
 	accAdd( ACC_SECCOL            , "secondary_color"  , 0, 0, MOD_CTRL );
 	accAdd( ACC_MOD_SQUARE        , "square"           , 0, 0, MOD_SHIFT );
 
@@ -349,7 +352,7 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 	if( res ) return true;
 	
 	// no tool used, secondary functions
-	if( checkAccButton( ACC_QUICK_COLORPICK, event->button, event->state ) ) {
+	if( checkAccButton( ACC_COLORPICK_QUICK, event->button, event->state ) ) {
 		// quick colorpick, temp store current
 		bool temp = m_DragPrimary;
 		Glib::RefPtr<Gdk::Cursor> tempCursor = m_refToolCursor;
@@ -743,15 +746,21 @@ void BitmapCanvasEditor::eyeDropperInit()
 
 bool BitmapCanvasEditor::eyeDropperActivate( guint button, guint mods )
 {
-	 if( checkAccButton(ACC_ACTIVATE, button) ) {
-		if( m_MouseInArea ) {
-			// pick under mouse
+	if( m_MouseInArea && !m_DragPrimary ) {
+		// pick under mouse
+		if( checkAccButton(ACC_COLORPICK_FG, button, mods) ) {
 			m_DragPrimary = true;
-			eyeDropperUpdate(mods);
-			changeCursor( m_refToolCursor );
-			/*m_PenColor = canvas().data( m_PixX, m_PixY );
-			m_Pen.setColor( m_PenColor );*/
+			m_PickFG = true;
+			m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg");	
+		} else if( checkAccButton(ACC_COLORPICK_BG, button, mods) ) {
+			m_DragPrimary = true;
+			m_PickFG = false;
+			m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_bg");	
+		} else {
+			return false;
 		}
+		changeCursor( m_refToolCursor );
+		eyeDropperUpdate(mods);
 		return true;
 	}
 	return false;
@@ -759,23 +768,6 @@ bool BitmapCanvasEditor::eyeDropperActivate( guint button, guint mods )
 
 bool BitmapCanvasEditor::eyeDropperUpdate( guint mods )
 {
-	// always update cursor
-	if( checkAccMods(ACC_SECCOL, mods) ) {
-		// bg color
-		if( m_PickFG ) {
-			m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_bg");	
-			changeCursor( m_refToolCursor );
-			m_PickFG = false;
-		}
-	} else {
-		// fg color
-		if( !m_PickFG ) {
-			m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg");	
-			changeCursor( m_refToolCursor );
-			m_PickFG = true;
-		}
-	}
-	
 	// pick color if down
 	if( m_DragPrimary ) {
 		if( m_PickFG )
@@ -789,8 +781,13 @@ bool BitmapCanvasEditor::eyeDropperUpdate( guint mods )
 
 bool BitmapCanvasEditor::eyeDropperRelease( guint button )
 {
-	m_DragPrimary = false;
-	return true;
+	if( ( m_PickFG && checkAccButton( ACC_COLORPICK_FG, button )) ||
+		(!m_PickFG && checkAccButton( ACC_COLORPICK_BG, button )) )
+	{
+		m_DragPrimary = false;
+		return true;
+	}
+	return false;
 }
 
 void BitmapCanvasEditor::eyeDropperClean()
