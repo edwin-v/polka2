@@ -268,6 +268,18 @@ void Canvas::draw( int x, int y, const Pen& pen )
 	}
 }
 
+void Canvas::changeColorDraw( int x, int y, const Pen& pen, int current )
+{
+	// TODO: draw on each data layer
+	if( !m_pData->changeColorDraw( x, y, pen, current ) ) return;
+
+	// update area
+	if( addChangedRect( Gdk::Rectangle( x-pen.offsetX(), y-pen.offsetY(), pen.width(), pen.height() ) ) ) {
+		// partial update self and dependencies
+		update(false);
+	}
+}
+
 void Canvas::drawLine( int x1, int y1, int x2, int y2, const Pen& pen )
 {
 	// TODO: draw on each data layer

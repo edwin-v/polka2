@@ -35,6 +35,7 @@ public:
 
 	// modification
 	virtual void draw( int x, int y, const Pen& pen );
+	virtual bool changeColorDraw( int x, int y, const Pen& pen, int current );
 	virtual void drawLine( int x1, int y1, int x2, int y2, const Pen& pen );
 	virtual void drawRect( int x1, int y1, int x2, int y2, const Pen& lpen, const Pen& fpen );
 	virtual Gdk::Rectangle bucketFill( int x, int y, const Pen& pen );

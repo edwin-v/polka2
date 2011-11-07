@@ -129,6 +129,12 @@ private:
 	bool brushRelease( guint button );
 	void brushClean();
 	
+	void chgColorInit();
+	bool chgColorActivate( guint button, guint mods );
+	bool chgColorUpdate( guint mods );
+	bool chgColorRelease( guint button );
+	void chgColorClean();
+
 	void lineInit();
 	bool lineActivate( guint button, guint mods );
 	bool lineUpdate( guint mods );

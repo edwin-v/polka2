@@ -231,6 +231,50 @@ void CanvasData::applyBrush( int x, int y, const Pen& pen )
 
 }
 
+bool CanvasData::changeColorDraw( int x, int y, const Pen& pen, int current )
+{
+	int cols = x - pen.offsetX();
+	int cole = cols + pen.width()-1;
+	int rows = y - pen.offsetY();
+	int rowe = rows + pen.height()-1;
+	m_Canvas.clipRectangle( cols, rows, cole, rowe );
+	int dx = cols - ( x-pen.offsetX() );
+	int dy = rows - ( y-pen.offsetY() );
+
+	bool changed = false;
+
+	// exit if nothing left
+	if( dx >= pen.width() || dy >= pen.height() ) return false;
+
+	// loop pen
+	for( int row = rows; row <= rowe; row++ ) {
+		// data pointers
+		const int *penData = pen.data() + (dy+row-rows)*pen.width() + dx;
+		char *data = m_Data[row] + cols*m_PixSize;
+		// copy data
+		for( int col = cols; col <= cole; col++ ) {
+			if( penData[0] != -1 ) {
+				// check current
+				bool is_current = true;
+				for( int i = 0; i < m_PixSize; i++ ) {
+					if( data[i] != ((current >> (i*8)) & 255) ) {
+						is_current = false;
+						break;
+					}
+				}
+				if( is_current )
+					for( int i = 0; i < m_PixSize; i++ ) {
+						data[i] = (penData[0] >> (i*8)) & 255;
+						changed = true;
+					}
+			}
+			data += m_PixSize;
+			penData++;
+		}
+	}
+	return changed;
+}
+
 Gdk::Rectangle CanvasData::bucketFill( int x, int y, const Pen& pen )
 {
 	Gdk::Rectangle r;

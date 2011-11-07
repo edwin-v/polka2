@@ -51,6 +51,7 @@ public:
 	// data modification
 	virtual void setPalette( Palette& pal );
 	virtual void draw( int x, int y, const Pen& pen );
+	virtual void changeColorDraw( int x, int y, const Pen& pen, int current );
 	virtual void drawLine( int x1, int y1, int x2, int y2, const Pen& pen );
 	virtual void drawRect( int x1, int y1, int x2, int y2, const Pen& lpen, const Pen& fpen );
 	virtual void bucketFill( int x, int y, const Pen& pen );

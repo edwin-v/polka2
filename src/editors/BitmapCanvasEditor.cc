@@ -50,10 +50,10 @@ enum {
 	TOOL_EYEDROPPER,
 	TOOL_PEN,
 	TOOL_BRUSH,
+	TOOL_CHANGECOLOR,
 	TOOL_LINE,
 	TOOL_RECT,
-	TOOL_FILL,
-	TOOL_GRID = 100,
+	TOOL_FILL
 };
 
 const int TOOLMARKER_ID = 9999;
@@ -127,6 +127,9 @@ void BitmapCanvasEditor::createTools( ToolButtonWindow& tw )
 	tw.addTool( rm.getIcon("canvasedit_tool_brush"), &m_ToolBrushPanel );
 	m_ToolBrushPanel.signalBrushSelected().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::changeBrush) );
 	
+	// TOOL_CHANGECOLOR: create color replace tool
+	tw.addTool( rm.getIcon("canvasedit_tool_changecolor"), &m_ToolBrushPanel );
+
 	// TOOL_LINE: create line tool
 	tw.addTool( rm.getIcon("canvasedit_tool_drawline") );
 	
@@ -270,6 +273,9 @@ void BitmapCanvasEditor::changeTool( int id )
 		case TOOL_BRUSH:
 			brushClean();
 			break;
+		case TOOL_CHANGECOLOR:
+			chgColorClean();
+			break;
 		case TOOL_LINE:
 			lineClean();
 			break;
@@ -300,6 +306,9 @@ void BitmapCanvasEditor::changeTool( int id )
 			break;
 		case TOOL_BRUSH:
 			brushInit();
+			break;
+		case TOOL_CHANGECOLOR:
+			chgColorInit();
 			break;
 		case TOOL_LINE:
 			lineInit();
@@ -334,6 +343,9 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 			break;
 		case TOOL_BRUSH:
 			res = brushActivate(event->button, event->state);
+			break;
+		case TOOL_CHANGECOLOR:
+			res = chgColorActivate(event->button, event->state);
 			break;
 		case TOOL_LINE:
 			res = lineActivate(event->button, event->state);
@@ -387,6 +399,9 @@ bool BitmapCanvasEditor::on_motion_notify_event(GdkEventMotion* event)
 		case TOOL_BRUSH:
 			res = brushUpdate( event->state );
 			break;
+		case TOOL_CHANGECOLOR:
+			res = chgColorUpdate( event->state );
+			break;
 		case TOOL_LINE:
 			res = lineUpdate( event->state );
 			break;
@@ -420,6 +435,9 @@ bool BitmapCanvasEditor::on_button_release_event(GdkEventButton *event)
 			break;
 		case TOOL_BRUSH:
 			res = brushRelease( event->button );
+			break;
+		case TOOL_CHANGECOLOR:
+			res = chgColorRelease( event->button );
 			break;
 		case TOOL_LINE:
 			res = lineRelease( event->button, event->state );
@@ -740,7 +758,7 @@ void BitmapCanvasEditor::rectSelectClean()
  */
 void BitmapCanvasEditor::eyeDropperInit()
 {
-	m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg");	
+	m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg");
 	m_PickFG = true;
 }
 
@@ -966,6 +984,90 @@ bool BitmapCanvasEditor::brushRelease( guint button )
  * Disable brush
  */
 void BitmapCanvasEditor::brushClean()
+{
+}
+
+
+/*
+ *--------------
+ * change color
+ *--------------
+ */ 
+
+/**
+ * Initialize the change color brush drawing tool 
+ */
+void BitmapCanvasEditor::chgColorInit()
+{
+	m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_changecolor");
+	// default brush
+	if( !m_pBrush )
+		m_pBrush = m_Brushes[0];
+}
+
+/**
+ * Start drawing, intialize brush color and undo action
+ */
+bool BitmapCanvasEditor::chgColorActivate( guint button, guint mods )
+{
+	if( checkAccButton(ACC_ACTIVATE, button) && m_MouseInArea ) {
+
+		// initial draw, reset color
+		m_PenColor = -1;
+		// start action
+		canvas().startAction( _("Change color"), ResourceManager::get().getIcon("canvasedit_tool_changecolor") );
+		m_DragPrimary = true;
+		
+		chgColorUpdate( mods );
+
+		return true;
+		
+	}
+	return false;
+}
+
+/**
+ * Actual drawing when activated
+ */
+bool BitmapCanvasEditor::chgColorUpdate( guint mods )
+{
+	if( m_DragPrimary ) {
+		// color changed?
+		if( checkAccMods(ACC_SECCOL, mods) ) {
+			if( m_PenColor != m_BGColor ) {
+				m_PenColor = m_BGColor;
+				m_pBrush->setColor( m_BGColor );
+			}				
+		} else {
+			if( m_PenColor != m_FGColor ) {
+				m_PenColor = m_FGColor;
+				m_pBrush->setColor( m_FGColor );
+			}				
+		}
+		// draw
+		canvas().changeColorDraw( m_PixX, m_PixY, *m_pBrush, m_PenColor==m_FGColor?m_BGColor:m_FGColor );
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Release brush activation and finalize undo action
+ */
+bool BitmapCanvasEditor::chgColorRelease( guint button )
+{
+	if( checkAccButton(ACC_ACTIVATE, button) ) {
+		canvas().finishAction();
+		m_DragPrimary = false;
+		return true;
+	}
+	return false;
+}
+
+/**
+ * Disable brush
+ */
+void BitmapCanvasEditor::chgColorClean()
 {
 }
 
