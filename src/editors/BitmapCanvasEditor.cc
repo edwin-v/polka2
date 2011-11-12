@@ -763,18 +763,27 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 			// move
 			if( m_ToolMode == SELECT_MODE_MOVE ) {
 				if( sw%canvas().tileGridWidth() || sh%canvas().tileGridHeight() ) modTile = false;
-				sx += tx-m_DragStartX;
-				sy += ty-m_DragStartY;
+				sx = tx-m_DragOffsetX;
+				sy = ty-m_DragOffsetY;
 				clipPixelArea(sx, sy, sw, sh);
-				if( modTile ) tileCoords( sx, sy, sx, sy );
+				if( modTile ) {
+					tileCoords( sx, sy, sx, sy );
+					sx = sx * canvas().tileGridWidth() + canvas().tileGridHorOffset();
+					sy = sy * canvas().tileGridHeight() + canvas().tileGridVerOffset();
+				}
 				shape.setLocation(sx, sy);
 				canvasChanged( Gdk::Rectangle(sx-2, sy-2, sw+4, sh+4) );
-				m_DragStartX = tx;
-				m_DragStartY = ty;
 				return true;
 			}
 			// modify up
 			if( m_ToolMode == SELECT_MODE_SCALEUP || m_ToolMode == SELECT_MODE_SCALEUPLEFT || m_ToolMode == SELECT_MODE_SCALEUPRIGHT ) {
+				if( modTile ) {
+					// snap to tile
+					if( ty > canvas().tileGridVerOffset() )
+						ty -= (ty - canvas().tileGridVerOffset()) % canvas().tileGridHeight();
+					else
+						ty = canvas().tileGridVerOffset();
+				}
 				if( ty > sy+sh ) {
 					sy += sh-1;
 					sh = 1;
@@ -785,6 +794,12 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 			}
 			// modify down
 			if( m_ToolMode == SELECT_MODE_SCALEDOWN || m_ToolMode == SELECT_MODE_SCALEDOWNLEFT || m_ToolMode == SELECT_MODE_SCALEDOWNRIGHT ) {
+				if( modTile ) {
+					// snap to tile
+					ty += canvas().tileGridHeight()-1 - (ty - canvas().tileGridVerOffset()) % canvas().tileGridHeight();
+					if( ty >= canvas().height() )
+						ty -= canvas().tileGridHeight();
+				}
 				if( ty < sy ) {
 					sh = 1;
 				} else {
@@ -793,6 +808,13 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 			}
 			// modify left
 			if( m_ToolMode == SELECT_MODE_SCALELEFT || m_ToolMode == SELECT_MODE_SCALEUPLEFT || m_ToolMode == SELECT_MODE_SCALEDOWNLEFT ) {
+				if( modTile ) {
+					// snap to tile
+					if( tx > canvas().tileGridHorOffset() )
+						tx -= (tx - canvas().tileGridHorOffset()) % canvas().tileGridWidth();
+					else
+						tx = canvas().tileGridHorOffset();
+				}
 				if( tx > sx+sw ) {
 					sx += sw-1;
 					sw = 1;
@@ -803,6 +825,12 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 			}
 			// modify right
 			if( m_ToolMode == SELECT_MODE_SCALERIGHT || m_ToolMode == SELECT_MODE_SCALEUPRIGHT || m_ToolMode == SELECT_MODE_SCALEDOWNRIGHT ) {
+				if( modTile ) {
+					// snap to tile
+					tx += canvas().tileGridWidth()-1 - (tx - canvas().tileGridHorOffset()) % canvas().tileGridWidth();
+					if( tx >= canvas().width() )
+						tx -= canvas().tileGridWidth();
+				}
 				if( tx < sx ) {
 					sw = 1;
 				} else {
@@ -851,22 +879,18 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 			}
 		} else if( m_MouseX < x1+3 ) {
 			// left edge
-			if( m_ToolMode != SELECT_MODE_SCALELEFT ) {
-				m_ToolMode = SELECT_MODE_SCALELEFT;
-				changeCursor( Gdk::Cursor::create(Gdk::LEFT_SIDE) );
-			}
+			m_ToolMode = SELECT_MODE_SCALELEFT;
+			changeCursor( Gdk::Cursor::create(Gdk::LEFT_SIDE) );
 		} else if( m_MouseX > x2-3 ) {
 			// right edge
-			if( m_ToolMode != SELECT_MODE_SCALERIGHT ) {
-				m_ToolMode = SELECT_MODE_SCALERIGHT;
-				changeCursor( Gdk::Cursor::create(Gdk::RIGHT_SIDE) );
-			}
+			m_ToolMode = SELECT_MODE_SCALERIGHT;
+			changeCursor( Gdk::Cursor::create(Gdk::RIGHT_SIDE) );
 		} else {
 			// inside
-			if( m_ToolMode != SELECT_MODE_MOVE ) {
-				m_ToolMode = SELECT_MODE_MOVE;
-				changeCursor( Gdk::Cursor::create(Gdk::FLEUR) );
-			}
+			m_ToolMode = SELECT_MODE_MOVE;
+			changeCursor( Gdk::Cursor::create(Gdk::FLEUR) );
+			m_DragOffsetX = (m_MouseX - x1) / hscale();
+			m_DragOffsetY = (m_MouseY - y1) / vscale();
 		}
 	} else {
 		// reset mode if selection was removed

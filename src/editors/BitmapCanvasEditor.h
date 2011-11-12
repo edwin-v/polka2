@@ -51,17 +51,17 @@ protected:
 	OverlayPainter m_Overlay;
 
 private:
-	bool m_DragPrimary, m_GridStore;
-	int m_DragStartPixX, m_DragStartPixY;
-	int m_LastDrawX, m_LastDrawY;
+	bool m_DragPrimary;
 
 	// processed coordinates
 	int m_MouseX, m_MouseY, m_LastMouseX, m_LastMouseY;
 	int m_PixX, m_PixY, m_LastPixX, m_LastPixY;
 	bool m_MouseInArea;
-	int m_DragStartX, m_DragStartY, m_DragEndX, m_DragEndY;
 	int m_TileX, m_TileY;
 	bool m_InFullTile;
+	// extra tool coordinates
+	int m_DragStartX, m_DragStartY, m_DragEndX, m_DragEndY;
+	int m_DragOffsetX, m_DragOffsetY;
 
 	bool m_ZoomMode;
 
