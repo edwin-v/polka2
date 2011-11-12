@@ -46,7 +46,7 @@ protected:
 	
 	void setFastUpdate( bool fast = true );
 	
-	void changeCursor( Glib::RefPtr<Gdk::Cursor> cursor = Glib::RefPtr<Gdk::Cursor>() );
+	virtual void changeCursor( Glib::RefPtr<Gdk::Cursor> cursor = Glib::RefPtr<Gdk::Cursor>() );
 	virtual void restoreCursor();
 	
 private:

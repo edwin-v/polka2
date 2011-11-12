@@ -58,6 +58,10 @@ enum {
 
 const int TOOLMARKER_ID = 9999;
 
+enum { SELECT_MODE_NONE, SELECT_MODE_MOVE, SELECT_MODE_SCALEUP,
+       SELECT_MODE_SCALEDOWN, SELECT_MODE_SCALELEFT, SELECT_MODE_SCALERIGHT,
+       SELECT_MODE_SCALEUPLEFT, SELECT_MODE_SCALEDOWNLEFT,
+       SELECT_MODE_SCALEUPRIGHT, SELECT_MODE_SCALEDOWNRIGHT };
 
 enum { ACC_ACTIVATE = 1, ACC_SELECT_TILE, 
        ACC_COLORPICK_FG, ACC_COLORPICK_BG, ACC_COLORPICK_QUICK, ACC_SECCOL,
@@ -208,7 +212,13 @@ void BitmapCanvasEditor::changeBrush( int id )
 	} else
 		m_pBrush = 0;
 }
-	
+
+void BitmapCanvasEditor::changeCursor( Glib::RefPtr<Gdk::Cursor> cursor )
+{
+	m_refToolCursor = cursor;
+	CanvasView::changeCursor(cursor);
+}
+
 void BitmapCanvasEditor::restoreCursor()
 {
 	get_window()->set_cursor( m_refToolCursor );
@@ -320,9 +330,8 @@ void BitmapCanvasEditor::changeTool( int id )
 			fillInit();
 			break;
 		default:
-			m_refToolCursor = Gdk::Cursor::create(Gdk::ARROW);
+			changeCursor( Gdk::Cursor::create(Gdk::ARROW) );
 	}
-	changeCursor( m_refToolCursor );
 }
 
 bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
@@ -371,8 +380,7 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 		m_DragPrimary = true;
 		eyeDropperUpdate( event->state );
 		m_DragPrimary = temp;
-		m_refToolCursor = tempCursor;
-		changeCursor(m_refToolCursor);
+		changeCursor(tempCursor);
 	}
 	
 	
@@ -505,6 +513,12 @@ bool BitmapCanvasEditor::on_key_press_event( GdkEventKey *event )
 			canvas().setClipRectangle( datx, daty, gw, gh );
 			
 			m_ZoomMode = true;
+			
+			// verify selection
+			OverlayPainter::Shape& sh = m_Overlay.shape(10);
+			if( sh.x() < datx || sh.y() < daty ||
+			    sh.x()+sh.width() > datx+gw ||
+			    sh.y()+sh.height() > daty+gh ) sh.setVisible(false);
 		}
 	}
 	return CanvasView::on_key_press_event(event);
@@ -566,7 +580,7 @@ bool BitmapCanvasEditor::isInPixelArea( int x, int y )
 	}
 }
 
-void BitmapCanvasEditor::clipPixelArea( int& x, int& y )
+void BitmapCanvasEditor::clipPixelArea( int& x, int& y, int w, int h )
 {
 	if( m_ZoomMode ) {
 		// get tile grid
@@ -587,6 +601,9 @@ void BitmapCanvasEditor::clipPixelArea( int& x, int& y )
 			y = ty;
 		else if( y >= ty+gh )
 			y = ty+gh-1;
+
+		if( w > 0 && x+w > tx+gw ) x = tx+gw - w;
+		if( h > 0 && y+h > ty+gh ) y = ty+gh - h;
 			
 	} else {
 		if( x < 0 )
@@ -598,6 +615,9 @@ void BitmapCanvasEditor::clipPixelArea( int& x, int& y )
 			y = 0;
 		else if( y >= canvas().height() )
 			y = canvas().height() - 1;
+			
+		if( w > 0 && x+w > canvas().width() ) x = canvas().width() - w;
+		if( h > 0 && y+h > canvas().height() ) y = canvas().height() - h;
 	}
 }
 
@@ -632,7 +652,8 @@ void BitmapCanvasEditor::resetActiveTool()
  */
 void BitmapCanvasEditor::rectSelectInit()
 {
-	m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_selectrect");	
+	changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_selectrect") );
+	m_ToolMode = SELECT_MODE_NONE;
 }
 
 /**
@@ -648,6 +669,7 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 
 		// turn off slow drawing features
 		setFastUpdate();
+		queue_draw();
 		
 		if( checkAccMods(ACC_SELECT_TILE, mods) && updateTileCoords() ) {
 			// select initial tile
@@ -664,60 +686,185 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
  */
 bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 {
+	OverlayRectangle& shape = dynamic_cast<OverlayRectangle&>(m_Overlay.shape(10));
+
 	if( m_DragPrimary ) {
-		int x1, x2, y1, y2;
-		if( checkAccMods(ACC_SELECT_TILE, mods) && updateTileCoords() ) {
-			// select tiles
-			int tsx, tsy, tex, tey;
-			tileCoords( m_DragStartX, m_DragStartY, tsx, tsy );
-			if( tsx <= m_TileX ) {
-				tex = m_TileX;
+		// select whole tiles?
+		bool modTile = m_ZoomMode ? false : checkAccMods(ACC_SELECT_TILE, mods);
+
+		if( m_ToolMode == SELECT_MODE_NONE ) {
+			int x1, x2, y1, y2;
+			if( modTile && updateTileCoords() ) {
+				// select tiles
+				int tsx, tsy, tex, tey;
+				tileCoords( m_DragStartX, m_DragStartY, tsx, tsy );
+				if( tsx <= m_TileX ) {
+					tex = m_TileX;
+				} else {
+					tex = tsx;
+					tsx = m_TileX;
+				}
+				if( tsy <= m_TileY ) {
+					tey = m_TileY;
+				} else {
+					tey = tsy;
+					tsy = m_TileY;
+				}
+				// clip to whole tiles
+				if( tsx < 0 ) tsx = 0;
+				if( tsy < 0 ) tsy = 0;
+				int tmax = (canvas().width() - canvas().tileGridHorOffset()) / canvas().tileGridWidth();
+				if( tex >= tmax ) tex = tmax - 1;
+				tmax = (canvas().height() - canvas().tileGridVerOffset()) / canvas().tileGridHeight();
+				if( tey >= tmax ) tey = tmax - 1;
+				//
+				x1 = canvas().tileGridHorOffset() + tsx * canvas().tileGridWidth();
+				y1 = canvas().tileGridVerOffset() + tsy * canvas().tileGridHeight();
+				x2 = canvas().tileGridHorOffset() + (tex+1) * canvas().tileGridWidth() - 1;
+				y2 = canvas().tileGridVerOffset() + (tey+1) * canvas().tileGridHeight() - 1;
 			} else {
-				tex = tsx;
-				tsx = m_TileX;
+				// select pixels
+				if( m_PixX < m_DragStartX ) {
+					x1 = m_PixX;
+					x2 = m_DragStartX;
+				} else {
+					x1 = m_DragStartX;
+					x2 = m_PixX;
+				}
+				if( m_PixY < m_DragStartY ) {
+					y1 = m_PixY;
+					y2 = m_DragStartY;
+				} else {
+					y1 = m_DragStartY;
+					y2 = m_PixY;
+				}
+				clipPixelArea(x1, y1);
+				clipPixelArea(x2, y2);
 			}
-			if( tsy <= m_TileY ) {
-				tey = m_TileY;
-			} else {
-				tey = tsy;
-				tsy = m_TileY;
-			}
-			// clip to whole tiles
-			if( tsx < 0 ) tsx = 0;
-			if( tsy < 0 ) tsy = 0;
-			int tmax = (canvas().width() - canvas().tileGridHorOffset()) / canvas().tileGridWidth();
-			if( tex >= tmax ) tex = tmax - 1;
-			tmax = (canvas().height() - canvas().tileGridVerOffset()) / canvas().tileGridHeight();
-			if( tey >= tmax ) tey = tmax - 1;
-			//
-			x1 = canvas().tileGridHorOffset() + tsx * canvas().tileGridWidth();
-			y1 = canvas().tileGridVerOffset() + tsy * canvas().tileGridHeight();
-			x2 = canvas().tileGridHorOffset() + (tex+1) * canvas().tileGridWidth() - 1;
-			y2 = canvas().tileGridVerOffset() + (tey+1) * canvas().tileGridHeight() - 1;
+			shape.setLocation(x1, y1);
+			shape.setSize( 1+x2-x1, 1+y2-y1 );
+			shape.setVisible( x1 != x2 || y1 != y2 );
+			queue_draw();
+			return true;
 		} else {
-			// select pixels
-			if( m_PixX < m_DragStartX ) {
-				x1 = m_PixX;
-				x2 = m_DragStartX;
-			} else {
-				x1 = m_DragStartX;
-				x2 = m_PixX;
+			// selection modification, 
+			int sx = shape.x(), sw = shape.width();
+			int sy = shape.y(), sh = shape.height();
+			canvasChanged( Gdk::Rectangle(sx-2, sy-2, sw+4, sh+4) );
+			// clip target
+			int tx = m_PixX, ty = m_PixY;
+			clipPixelArea(tx, ty);
+			// move
+			if( m_ToolMode == SELECT_MODE_MOVE ) {
+				if( sw%canvas().tileGridWidth() || sh%canvas().tileGridHeight() ) modTile = false;
+				sx += tx-m_DragStartX;
+				sy += ty-m_DragStartY;
+				clipPixelArea(sx, sy, sw, sh);
+				if( modTile ) tileCoords( sx, sy, sx, sy );
+				shape.setLocation(sx, sy);
+				canvasChanged( Gdk::Rectangle(sx-2, sy-2, sw+4, sh+4) );
+				m_DragStartX = tx;
+				m_DragStartY = ty;
+				return true;
 			}
-			if( m_PixY < m_DragStartY ) {
-				y1 = m_PixY;
-				y2 = m_DragStartY;
-			} else {
-				y1 = m_DragStartY;
-				y2 = m_PixY;
+			// modify up
+			if( m_ToolMode == SELECT_MODE_SCALEUP || m_ToolMode == SELECT_MODE_SCALEUPLEFT || m_ToolMode == SELECT_MODE_SCALEUPRIGHT ) {
+				if( ty > sy+sh ) {
+					sy += sh-1;
+					sh = 1;
+				} else {
+					sh += sy-ty;
+					sy = ty;
+				}
 			}
-			clipPixelArea(x1, y1);
-			clipPixelArea(x2, y2);
+			// modify down
+			if( m_ToolMode == SELECT_MODE_SCALEDOWN || m_ToolMode == SELECT_MODE_SCALEDOWNLEFT || m_ToolMode == SELECT_MODE_SCALEDOWNRIGHT ) {
+				if( ty < sy ) {
+					sh = 1;
+				} else {
+					sh = ty-sy+1;
+				}
+			}
+			// modify left
+			if( m_ToolMode == SELECT_MODE_SCALELEFT || m_ToolMode == SELECT_MODE_SCALEUPLEFT || m_ToolMode == SELECT_MODE_SCALEDOWNLEFT ) {
+				if( tx > sx+sw ) {
+					sx += sw-1;
+					sw = 1;
+				} else {
+					sw += sx-tx;
+					sx = tx;
+				}
+			}
+			// modify right
+			if( m_ToolMode == SELECT_MODE_SCALERIGHT || m_ToolMode == SELECT_MODE_SCALEUPRIGHT || m_ToolMode == SELECT_MODE_SCALEDOWNRIGHT ) {
+				if( tx < sx ) {
+					sw = 1;
+				} else {
+					sw = tx-sx+1;
+				}
+			}
+			// update rect
+			shape.setLocation(sx, sy);
+			shape.setSize(sw, sh);
+			canvasChanged( Gdk::Rectangle(sx-2, sy-2, sw+4, sh+4) );
+			return true;
+		}			
+	} else if( shape.isVisible() ) {
+		// check for rectangle modifiers
+		// first calc selection in rectangle coords
+		int x1 = m_Overlay.shape(10).x() * hscale() - dx();
+		int y1 = m_Overlay.shape(10).y() * vscale() - dy();
+		int x2 = x1-1 + m_Overlay.shape(10).width() * hscale();
+		int y2 = y1-1 + m_Overlay.shape(10).height() * vscale();
+		if( m_MouseX <= x1-6 || m_MouseX >= x2+6 || m_MouseY <= y1-6 || m_MouseY >= y2+6 ) {
+			// outside selection
+			rectSelectInit();
+		} else if( m_MouseY < y1+3 ) {
+			// top edge
+			if( m_MouseX < x1+3 ) {
+				m_ToolMode = SELECT_MODE_SCALEUPLEFT;
+				changeCursor( Gdk::Cursor::create(Gdk::TOP_LEFT_CORNER) );
+			} else if( m_MouseX > x2-3 ) {
+				m_ToolMode = SELECT_MODE_SCALEUPRIGHT;
+				changeCursor( Gdk::Cursor::create(Gdk::TOP_RIGHT_CORNER) );
+			} else {
+				m_ToolMode = SELECT_MODE_SCALEUP;
+				changeCursor( Gdk::Cursor::create(Gdk::TOP_SIDE) );
+			}
+		} else if( m_MouseY > y2-3 ) {
+			// bottom edge
+			if( m_MouseX < x1+3 ) {
+				m_ToolMode = SELECT_MODE_SCALEDOWNLEFT;
+				changeCursor( Gdk::Cursor::create(Gdk::BOTTOM_LEFT_CORNER) );
+			} else if( m_MouseX > x2-3 ) {
+				m_ToolMode = SELECT_MODE_SCALEDOWNRIGHT;
+				changeCursor( Gdk::Cursor::create(Gdk::BOTTOM_RIGHT_CORNER) );
+			} else {
+				m_ToolMode = SELECT_MODE_SCALEDOWN;
+				changeCursor( Gdk::Cursor::create(Gdk::BOTTOM_SIDE) );
+			}
+		} else if( m_MouseX < x1+3 ) {
+			// left edge
+			if( m_ToolMode != SELECT_MODE_SCALELEFT ) {
+				m_ToolMode = SELECT_MODE_SCALELEFT;
+				changeCursor( Gdk::Cursor::create(Gdk::LEFT_SIDE) );
+			}
+		} else if( m_MouseX > x2-3 ) {
+			// right edge
+			if( m_ToolMode != SELECT_MODE_SCALERIGHT ) {
+				m_ToolMode = SELECT_MODE_SCALERIGHT;
+				changeCursor( Gdk::Cursor::create(Gdk::RIGHT_SIDE) );
+			}
+		} else {
+			// inside
+			if( m_ToolMode != SELECT_MODE_MOVE ) {
+				m_ToolMode = SELECT_MODE_MOVE;
+				changeCursor( Gdk::Cursor::create(Gdk::FLEUR) );
+			}
 		}
-		m_Overlay.shape(10).setLocation(x1, y1);
-		m_Overlay.shape(10).setSize( 1+x2-x1, 1+y2-y1 );
-		m_Overlay.shape(10).setVisible( x1 != x2 || y1 != y2 );
-		queue_draw();
-		return true;
+	} else {
+		// reset mode if selection was removed
+		rectSelectInit();
 	}
 	
 	return false;
@@ -758,7 +905,7 @@ void BitmapCanvasEditor::rectSelectClean()
  */
 void BitmapCanvasEditor::eyeDropperInit()
 {
-	m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg");
+	changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg") );
 	m_PickFG = true;
 }
 
@@ -769,15 +916,14 @@ bool BitmapCanvasEditor::eyeDropperActivate( guint button, guint mods )
 		if( checkAccButton(ACC_COLORPICK_FG, button, mods) ) {
 			m_DragPrimary = true;
 			m_PickFG = true;
-			m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg");	
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg") );
 		} else if( checkAccButton(ACC_COLORPICK_BG, button, mods) ) {
 			m_DragPrimary = true;
 			m_PickFG = false;
-			m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_bg");	
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_bg") );
 		} else {
 			return false;
 		}
-		changeCursor( m_refToolCursor );
 		eyeDropperUpdate(mods);
 		return true;
 	}
@@ -824,7 +970,7 @@ void BitmapCanvasEditor::eyeDropperClean()
  */
 void BitmapCanvasEditor::penInit()
 {
-	m_refToolCursor = Gdk::Cursor::create(Gdk::PENCIL);
+	changeCursor( Gdk::Cursor::create(Gdk::PENCIL) );
 }
 
 /**
@@ -915,7 +1061,7 @@ void BitmapCanvasEditor::penClean()
  */
 void BitmapCanvasEditor::brushInit()
 {
-	m_refToolCursor = Gdk::Cursor::create(Gdk::TCROSS);
+	changeCursor( Gdk::Cursor::create(Gdk::TCROSS) );
 	// default brush
 	if( !m_pBrush )
 		m_pBrush = m_Brushes[0];
@@ -999,7 +1145,7 @@ void BitmapCanvasEditor::brushClean()
  */
 void BitmapCanvasEditor::chgColorInit()
 {
-	m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_changecolor");
+	changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_changecolor") );
 	// default brush
 	if( !m_pBrush )
 		m_pBrush = m_Brushes[0];
@@ -1083,7 +1229,7 @@ void BitmapCanvasEditor::chgColorClean()
  */
 void BitmapCanvasEditor::lineInit()
 {
-	m_refToolCursor = Gdk::Cursor::create(Gdk::CROSSHAIR);
+	changeCursor( Gdk::Cursor::create(Gdk::CROSSHAIR) );
 }
 
 /**
@@ -1211,7 +1357,7 @@ void BitmapCanvasEditor::lineClean()
  */
 void BitmapCanvasEditor::rectInit()
 {
-	m_refToolCursor = Gdk::Cursor::create(Gdk::CROSSHAIR);
+	changeCursor( Gdk::Cursor::create(Gdk::CROSSHAIR) );
 }
 
 /**
@@ -1327,7 +1473,7 @@ void BitmapCanvasEditor::rectClean()
  */
 void BitmapCanvasEditor::fillInit()
 {
-	m_refToolCursor = ResourceManager::get().getCursor(get_window(), "canvasedit_fill");
+	changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_fill") );
 }
 
 /**

@@ -45,6 +45,7 @@ protected:
 	virtual void on_hide();
 	virtual void on_show();
 
+	virtual void changeCursor( Glib::RefPtr<Gdk::Cursor> cursor = Glib::RefPtr<Gdk::Cursor>() );
 	virtual void restoreCursor();
 
 	OverlayPainter m_Overlay;
@@ -79,6 +80,7 @@ private:
 	ToolRectPanel m_ToolRectPanel;
 
 	// tool variables
+	int m_ToolMode;
 	int m_FGColor, m_BGColor;
 	Pen m_Pen;
 	int m_PenColor;
@@ -94,7 +96,7 @@ private:
 	void changeColor( int col, int seccol );
 	void changeBrush( int id );
 	bool isInPixelArea( int x, int y );
-	void clipPixelArea( int& x, int& y );
+	void clipPixelArea( int& x, int& y, int w = -1, int h = -1 );
 	void resetActiveTool();	
 	void removeToolMarker();
 	void updateCoords( int x, int y );
