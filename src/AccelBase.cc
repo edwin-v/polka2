@@ -98,7 +98,7 @@ guint AccelBase::accKey( guint id )
  * @return true if button and modifiers match action
  */
 bool AccelBase::checkAccButton( guint id, guint button, guint mods, bool exact )
-{
+{std::cout << "BUT: " << button << std::endl;
 	assert( id < m_Accels.size() );
 
 	// check mods
@@ -149,5 +149,17 @@ bool AccelBase::checkAccMods( guint id, guint mods, bool exact )
 		return  (Gdk::ModifierType(mods) & m_Accels[id].mods ) == m_Accels[id].mods;
 	}
 }
+
+/**
+ * Helper to calculate the button from the event structure.
+ * 
+ * @param event the GdkEventButton structure
+ * @return the button id
+ */
+guint AccelBase::accEventButton( const GdkEventButton *event ) const
+{
+	return event->button + (event->type == GDK_2BUTTON_PRESS ? DBL_CLICK:0);
+}
+
 
 } // namespace Polka

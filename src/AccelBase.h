@@ -15,6 +15,8 @@ const Gdk::ModifierType MOD_ALT = Gdk::MOD1_MASK;
 const Gdk::ModifierType MOD_LWIN = Gdk::MOD4_MASK;
 const Gdk::ModifierType MOD_RWIN = Gdk::MOD5_MASK;
 
+const guint DBL_CLICK = 256;
+
 class AccelBase
 {
 public:
@@ -35,6 +37,8 @@ protected:
 	bool checkAccButton( guint id, guint button, guint mods = 0, bool exact = false );
 	bool checkAccKey( guint id, guint key, guint mods = 0, bool exact = false );
 	bool checkAccMods( guint id, guint mods, bool exact = false );
+	// helpers
+	guint accEventButton( const GdkEventButton *event ) const;
 	
 private:
 	std::string m_Id;

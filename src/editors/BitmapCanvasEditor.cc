@@ -63,7 +63,7 @@ enum { SELECT_MODE_NONE, SELECT_MODE_MOVE, SELECT_MODE_SCALEUP,
        SELECT_MODE_SCALEUPLEFT, SELECT_MODE_SCALEDOWNLEFT,
        SELECT_MODE_SCALEUPRIGHT, SELECT_MODE_SCALEDOWNRIGHT };
 
-enum { ACC_ACTIVATE = 1, ACC_SELECT_TILE, 
+enum { ACC_ACTIVATE = 1, ACC_SELECT_TILE, ACC_SELECT_FLOAT,
        ACC_COLORPICK_FG, ACC_COLORPICK_BG, ACC_COLORPICK_QUICK, ACC_SECCOL,
        ACC_MOD_SQUARE };
 
@@ -80,6 +80,7 @@ BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	// add accelerators
 	accAdd( ACC_ACTIVATE          , "activate"         , 1 );
 	accAdd( ACC_SELECT_TILE       , "select/tile"      , 0, 0, MOD_CTRL );
+	accAdd( ACC_SELECT_FLOAT      , "select/floating"  , 1 + DBL_CLICK );
 	accAdd( ACC_COLORPICK_FG      , "colorpick/fg"     , 1 );
 	accAdd( ACC_COLORPICK_BG      , "colorpick/bg"     , 3 );
 	accAdd( ACC_COLORPICK_QUICK   , "colorpick/quick"  , 3 );
@@ -340,30 +341,31 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 	updateCoords( event->x, event->y );
 	// activate tool
 	bool res = false;
+	int but = accEventButton(event);
 	switch( m_CurrentTool ) {
 		case TOOL_SELECT:
-			res = rectSelectActivate(event->button, event->state);
+			res = rectSelectActivate(but, event->state);
 			break;
 		case TOOL_EYEDROPPER:
-			res = eyeDropperActivate(event->button, event->state);
+			res = eyeDropperActivate(but, event->state);
 			break;
 		case TOOL_PEN:
-			res = penActivate(event->button, event->state);
+			res = penActivate(but, event->state);
 			break;
 		case TOOL_BRUSH:
-			res = brushActivate(event->button, event->state);
+			res = brushActivate(but, event->state);
 			break;
 		case TOOL_CHANGECOLOR:
-			res = chgColorActivate(event->button, event->state);
+			res = chgColorActivate(but, event->state);
 			break;
 		case TOOL_LINE:
-			res = lineActivate(event->button, event->state);
+			res = lineActivate(but, event->state);
 			break;
 		case TOOL_RECT:
-			res = rectActivate(event->button, event->state);
+			res = rectActivate(but, event->state);
 			break;
 		case TOOL_FILL:
-			res = fillActivate(event->button, event->state);
+			res = fillActivate(but, event->state);
 			break;
 		default:
 			break;
@@ -373,7 +375,7 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 	if( res ) return true;
 	
 	// no tool used, secondary functions
-	if( checkAccButton( ACC_COLORPICK_QUICK, event->button, event->state ) ) {
+	if( checkAccButton( ACC_COLORPICK_QUICK, but, event->state ) ) {
 		// quick colorpick, temp store current
 		bool temp = m_DragPrimary;
 		Glib::RefPtr<Gdk::Cursor> tempCursor = m_refToolCursor;
@@ -657,11 +659,15 @@ void BitmapCanvasEditor::rectSelectInit()
 }
 
 /**
- * Start dragging a selection rectangle
+ * Start dragging a rectangle or rectangle modification. When inside
+ * a selection, a selection can be made floating.
  */
 bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) && m_MouseInArea ) {
+	if( m_ToolMode == SELECT_MODE_MOVE && checkAccButton( ACC_SELECT_FLOAT, button, mods ) ) {
+		// TEMP action
+		createBrushFromSelection();
+	} else if( checkAccButton(ACC_ACTIVATE, button) && m_MouseInArea ) {
 		// start drag
 		m_DragPrimary = true;
 		m_DragStartX = m_PixX;
