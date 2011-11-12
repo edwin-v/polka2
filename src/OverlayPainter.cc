@@ -386,7 +386,7 @@ void OverlayCross::drawShape( Cairo::RefPtr<Cairo::Context> cc, int width, int h
 	// line offsets
 	double px = hsc*m_X + (m_LeftOfPixel?-0.5:hsc+0.5);
 	double py = vsc*m_Y + (m_TopOfPixel ?-0.5:vsc+0.5);
-std::cout << px << "   " << py << std::endl;
+
 	// draw rectangle with edge
 	cc->move_to( px, 0 );
 	cc->line_to( px, height*vsc );

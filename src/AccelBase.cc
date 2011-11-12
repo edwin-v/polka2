@@ -98,7 +98,7 @@ guint AccelBase::accKey( guint id )
  * @return true if button and modifiers match action
  */
 bool AccelBase::checkAccButton( guint id, guint button, guint mods, bool exact )
-{std::cout << "BUT: " << button << std::endl;
+{
 	assert( id < m_Accels.size() );
 
 	// check mods

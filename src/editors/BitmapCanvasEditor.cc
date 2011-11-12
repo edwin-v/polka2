@@ -846,10 +846,10 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 	} else if( shape.isVisible() ) {
 		// check for rectangle modifiers
 		// first calc selection in rectangle coords
-		int x1 = m_Overlay.shape(10).x() * hscale() - dx();
-		int y1 = m_Overlay.shape(10).y() * vscale() - dy();
-		int x2 = x1-1 + m_Overlay.shape(10).width() * hscale();
-		int y2 = y1-1 + m_Overlay.shape(10).height() * vscale();
+		int x1 = shape.x() * hscale() - dx();
+		int y1 = shape.y() * vscale() - dy();
+		int x2 = x1-1 + shape.width() * hscale();
+		int y2 = y1-1 + shape.height() * vscale();
 		if( m_MouseX <= x1-6 || m_MouseX >= x2+6 || m_MouseY <= y1-6 || m_MouseY >= y2+6 ) {
 			// outside selection
 			rectSelectInit();

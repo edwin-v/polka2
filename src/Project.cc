@@ -42,7 +42,7 @@ void Project::ProjectActionProxy::redo( const std::string& id, Storage& s )
 }
 
 void Project::ProjectActionProxy::performAction( const std::string& action, Storage& s )
-{ std::cout << "Proxy: " << action << std::endl;
+{
 	if( action == ACTION_RENAME ) {
 
 		// get names
@@ -732,7 +732,7 @@ Gtk::TreeModel::Row Project::createLocation( const std::vector<Glib::ustring>& p
 		bool exist = false;
 		// check existing map
 		for(auto it = row.children().begin(); it != row.children().end(); it++) {
-			if( (*it)[m_Cols.m_Name] == path[i] ) { std::cout << (*it)[m_Cols.m_Name] << "==" << path[i] << std::endl;
+			if( (*it)[m_Cols.m_Name] == path[i] ) {
 				row = *it;
 				exist = true;
 				break;

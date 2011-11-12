@@ -325,7 +325,6 @@ void MainWindow::onFileRecent()
 			return;
 
 	// check typed extension
-	std::cout << m_refRecent->get_current_item()->get_uri() << std::endl;
 	std::string fname = Glib::filename_from_uri( m_refRecent->get_current_uri() );
 	// create an empty projet
 	onFileNew();
@@ -505,7 +504,6 @@ void MainWindow::activateEditor( Editor *edt )
 		// show editor
 		m_EditorTitle.set_text( edt->title() );
 		m_MainFrame.show_all_children();
-		//std::cout << m_refUIManager->get_ui();
 	} else {
 		edt->activate();
 	}

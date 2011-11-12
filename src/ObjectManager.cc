@@ -309,7 +309,6 @@ void ObjectManager::hideEditors()
 	while( it != m_Editors.end() ) {
 		if( !it->second->isMainEditor() ) {
 			it->second->hide();
-			std::cout << "HIDEED\n";
 		}
 		++it;
 	}
