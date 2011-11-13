@@ -73,7 +73,8 @@ private:
 	int m_ActiveTool;
 	bool m_ToolHold;
 	OverlayPainter::Shape *m_pToolMarker;
-	OverlayBrush m_BrushMarker;
+	OverlayBrush m_BrushMarker, m_SelectionMarker;
+	
 
 	ToolSelectPanel m_ToolSelectPanel;
 	//ToolGridPanel m_ToolGridPanel;
@@ -88,7 +89,7 @@ private:
 	bool m_PickFG;
 	std::vector<Brush*> m_Brushes;
 	Glib::RefPtr<Gdk::Cursor> m_refToolCursor;
-	Brush *m_pBrush;
+	Brush *m_pBrush, *m_pSelectionBrush;
 
 
 	void screenDraw( int x, int y, bool use_brush = false );
@@ -105,7 +106,7 @@ private:
 	bool tileCoords( int x, int y, int& tx, int& ty );
 	
 	// interactive functions
-	void createBrushFromSelection();
+	Brush *createBrushFromSelection();
 	
 	// tool handlers
 	void rectSelectInit();
