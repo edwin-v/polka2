@@ -101,7 +101,6 @@ private:
 	void changeBrush( int id );
 	bool isInPixelArea( int x, int y );
 	void clipPixelArea( int& x, int& y, int w = -1, int h = -1 );
-	void resetActiveTool();	
 	void removeToolMarker();
 	void updateCoords( int x, int y );
 	bool updateTileCoords();

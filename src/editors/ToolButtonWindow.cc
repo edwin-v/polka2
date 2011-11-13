@@ -29,9 +29,9 @@ ToolButtonWindow::ToolButtonWindow( int width )
 	remove();
 	add( m_MainBox );
 
-	m_MainBox.pack_start( m_ButtonGrid );
+	m_MainBox.pack_start( m_ButtonGrid, Gtk::PACK_SHRINK );
 	//m_MainBox.pack_start( m_Expand );
-	m_MainBox.pack_start( m_Pages );
+	m_MainBox.pack_start( m_Pages, Gtk::PACK_EXPAND_WIDGET );
 	m_MainBox.set_spacing(4);
 	//m_Expand.add( m_Pages );
 	
@@ -65,8 +65,10 @@ void ToolButtonWindow::addTool(Glib::RefPtr<Gdk::Pixbuf> icon, Gtk::Widget *w )
 	
 	// add page widget to pages
 	if( w ) {
-		m_Pages.append_page( *w );
-		w->show();
+		if( m_Pages.page_num(*w) == -1 ) {
+			m_Pages.append_page( *w );
+			w->show();
+		}
 	}
 	
 		

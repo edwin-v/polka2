@@ -1,7 +1,7 @@
 #include "ColorSelector.h"
 #include "Palette.h"
 
-#include <iostream>
+
 namespace Polka {
 
 const int MIN_S = 6;
@@ -94,7 +94,7 @@ Gtk::SizeRequestMode ColorSelector::get_request_mode_vfunc() const
 }
 
 void ColorSelector::get_preferred_width_vfunc(int& minimum_width, int& natural_width) const
-{std::cout << "W\n";
+{
 	int sz = m_pPalette?m_pPalette->size():1;
 	
 	int w = m_ReqWidth;
@@ -110,7 +110,7 @@ void ColorSelector::get_preferred_width_vfunc(int& minimum_width, int& natural_w
 }
 
 void ColorSelector::get_preferred_height_for_width_vfunc(int width, int& minimum_height, int& natural_height) const
-{std::cout << "HfW\n";
+{
 	int sz = m_pPalette?m_pPalette->size():1;
 
 	if( m_ReqWidth < 1 ) {
@@ -135,7 +135,7 @@ void ColorSelector::get_preferred_height_for_width_vfunc(int width, int& minimum
 }
 
 void ColorSelector::get_preferred_height_vfunc(int& minimum_height, int& natural_height) const
-{std::cout << "H\n";
+{
 	int sz = m_pPalette?m_pPalette->size():1;
 	
 	int h = m_ReqHeight;
@@ -168,7 +168,6 @@ void ColorSelector::get_preferred_width_for_height_vfunc(int height, int& minimu
 		int w = sz/m_ReqHeight; if( sz%m_ReqHeight ) w++;
 		minimum_width = MIN_S*w;
 		natural_width = w * height / m_ReqHeight;
-		 std::cout << "WfH C"<< sz <<" (" << w << ", " << m_ReqHeight << "): " << natural_width << ", " << height << "\n";
 	} else {
 		// both fixed
 		minimum_width = MIN_S*m_ReqWidth;

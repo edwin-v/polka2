@@ -131,10 +131,10 @@ void BitmapCanvasEditor::createTools( ToolButtonWindow& tw )
 	m_Overlay.add( 23, new OverlayText( 0, 0, 18 ) );
 	m_Overlay.shape(23).setPrimaryPen( 1, 1, 1, 1 );
 	m_Overlay.shape(23).setSecondaryPen( 3, 0, 0, 0 );
-	
+
 	// TOOL_PEN: create pen tool
 	tw.addTool( rm.getIcon("canvasedit_tool_draw") );
-	
+
 	// TOOL_BRUSH: create brush tool
 	tw.addTool( rm.getIcon("canvasedit_tool_brush"), &m_ToolBrushPanel );
 	m_ToolBrushPanel.signalBrushSelected().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::changeBrush) );
@@ -142,22 +142,22 @@ void BitmapCanvasEditor::createTools( ToolButtonWindow& tw )
 	m_BrushMarker.setPrimaryPen( 1, 1, 1, 1 );
 	m_BrushMarker.setSecondaryPen( 1, 0, 0, 0 );
 	m_BrushMarker.setOutlineType( OverlayBrush::OUTLINE_SHAPED );
-	
+
 	// TOOL_CHANGECOLOR: create color replace tool
 	tw.addTool( rm.getIcon("canvasedit_tool_changecolor"), &m_ToolBrushPanel );
 
 	// TOOL_LINE: create line tool
 	tw.addTool( rm.getIcon("canvasedit_tool_drawline") );
-	
+
 	// TOOL_RECT: create rect tool
 	tw.addTool( rm.getIcon("canvasedit_tool_drawrect"), &m_ToolRectPanel );
-	
+
 	// TOOL_FILL: create fill tool
 	tw.addTool( rm.getIcon("canvasedit_tool_fill") );
 
 	// connect tool window
 	tw.signalSelectTool().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::changeTool) );
-	
+
 	//tw.present();
 }
 
@@ -325,7 +325,6 @@ void BitmapCanvasEditor::changeTool( int id )
 	m_DragPrimary = false;
 
 	m_CurrentTool = id;
-	resetActiveTool();
 	grab_focus();
 
 	switch( id ) {
@@ -644,20 +643,6 @@ void BitmapCanvasEditor::clipPixelArea( int& x, int& y, int w, int h )
 		if( w > 0 && x+w > canvas().width() ) x = canvas().width() - w;
 		if( h > 0 && y+h > canvas().height() ) y = canvas().height() - h;
 	}
-}
-
-void BitmapCanvasEditor::resetActiveTool()
-{
-	switch( m_ActiveTool ) {
-		case TOOL_LINE:
-		case TOOL_RECT:
-			removeToolMarker();
-			break;
-		default:
-			break;
-	}
-	m_ActiveTool = -1;
-	m_ToolHold = false;
 }
 
 /*
