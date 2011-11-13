@@ -66,9 +66,6 @@ CanvasEditor::CanvasEditor()
 	m_CanvasView.signalChangeFGColor().connect( sigc::mem_fun( m_ColorChooser, &ColorChooser::setFGColor ) );
 	m_CanvasView.signalChangeBGColor().connect( sigc::mem_fun( m_ColorChooser, &ColorChooser::setBGColor ) );
 
-	// defaults
-	m_ColorChooser.setFGColor(15);
-	m_ColorChooser.setBGColor(0);
 }
 
 
@@ -120,9 +117,7 @@ void CanvasEditor::objectUpdated( bool full )
 {
 	if( full ) {
 		// redraw everything
-		
-		/*m_CanvasView.*/queue_draw(); std::cout << "FULL REDRAW\n";
-		//m_ColorChooser.queue_draw();
+		queue_draw();
 	} else {
 		// redraw palette
 		m_CanvasView.canvasChanged( m_pCanvas->lastUpdate() );

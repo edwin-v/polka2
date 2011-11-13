@@ -7,7 +7,6 @@
 
 namespace Polka {
 
-
 class OverlayPainter
 {
 public:
@@ -161,7 +160,7 @@ private:
 };
 
 /*
- * Rectangle object for overlay painter
+ * Text object for overlay painter
  * 
  *   Draws a rectangle around pixels
  */
@@ -196,9 +195,9 @@ private:
 };
 
 /*
- * Rectangle object for overlay painter
+ * Grid object for overlay painter
  * 
- *   Draws a rectangle around pixels
+ *   Draws an evenly spaced grid
  */
 class OverlayGrid : public OverlayPainter::Shape
 {
@@ -226,6 +225,52 @@ private:
 	int	m_HorGridSize, m_VerGridSize;
 	int m_HorOffset, m_VerOffset;
 	GridType m_Type;
+};
+
+/*
+ * Object for overlay of (outlined)brushes
+ * 
+ *   Draws an overlay of a brush and/or a bounding rectangle or shape.
+ */
+class Brush;
+class Palette;
+
+class OverlayBrush : public OverlayPainter::Shape
+{
+public:
+	enum OutlineType { OUTLINE_RECT, OUTLINE_SHAPED };
+
+	OverlayBrush( bool show_brush = true, bool show_outline = true, OutlineType type = OUTLINE_RECT );
+	~OverlayBrush();
+	
+	void setBrush( Brush& brush, const Palette& pal );
+	void unsetBrush();
+
+	void setShowBrush( bool val = true );
+	void setShowOutline( bool val = true );
+	bool showBrush() const;
+	bool showOutline() const;
+	void setOutlineType( OutlineType type );
+
+	virtual void setSize( int /*w*/, int /*h*/ );
+	virtual void setLocation( int x, int y );
+	virtual void move( int x, int y );
+	
+	virtual int x();
+	virtual int y();
+	virtual int width();
+	virtual int height();
+
+protected:
+	void drawShape( Cairo::RefPtr<Cairo::Context> cc, int width, int height, int hscale, int vscale );
+
+private:
+	int m_X, m_Y;
+	bool m_ShowBrush, m_ShowOutline;
+	OutlineType m_Outline;
+	Brush *m_pBrush;
+	const Palette *m_pPalette;
+	std::vector< std::pair<int,int> > m_OutlinePath;
 };
 
 } // namespace Polka 

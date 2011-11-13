@@ -1,4 +1,5 @@
 #include "OverlayPainter.h"
+#include "Brush.h"
 #include <iostream>
 
 
@@ -675,8 +676,192 @@ void OverlayGrid::drawShape( Cairo::RefPtr<Cairo::Context> cc, int width, int he
 	cc->reset_clip();
 }
 
+/*
+ * OverlayBrush implementation
+ */
 
+OverlayBrush::OverlayBrush( bool show_brush, bool show_outline, OutlineType type )
+	: m_X(0), m_Y(0),
+	  m_ShowBrush(show_brush), m_ShowOutline(show_outline), m_Outline(type),
+	  m_pBrush(0)
+{
+}
+
+OverlayBrush::~OverlayBrush()
+{
+}
+	
+void OverlayBrush::setBrush( Brush& brush, const Palette& pal )
+{
+	m_pBrush = &brush;
+	m_pPalette = &pal;
+	// generate outline
+	const int *d = brush.data();
+	m_OutlinePath.clear();
+	// find all pixels with open edges
+	int p = 0, w = brush.width(), h = brush.height();
+	for( int y = 0; y < h; y++ ) {
+		for( int x = 0; x < w; x++ ) {
+			if( d[p] != -1 ) {
+				// create lines
+				// top
+				if( y == 0 || d[p-w] == -1 ) {
+					m_OutlinePath.push_back( {x,y} );
+					m_OutlinePath.push_back( {x+1,y} );
+				}
+				// right
+				if( x == w-1 || d[p+1] == -1 ) {
+					m_OutlinePath.push_back( {x+1,y} );
+					m_OutlinePath.push_back( {x+1,y+1} );
+				}
+				// bottom
+				if( y == h-1 || d[p+w] == -1 ) {
+					m_OutlinePath.push_back( {x+1,y+1} );
+					m_OutlinePath.push_back( {x,y+1} );
+				}
+				// left
+				if( x == 0 || d[p-1] == -1 ) {
+					m_OutlinePath.push_back( {x,y+1} );
+					m_OutlinePath.push_back( {x,y} );
+				}
+			}
+			p++;
+		}
+	}
+}
+
+void OverlayBrush::unsetBrush()
+{
+	m_pBrush = 0;
+	m_pPalette = 0;
+}
+
+void OverlayBrush::setShowBrush( bool val )
+{
+	m_ShowBrush = val;
+}
+
+void OverlayBrush::setShowOutline( bool val )
+{
+	m_ShowOutline = val;
+}
+
+bool OverlayBrush::showBrush() const
+{
+	return m_ShowBrush;
+}
+
+bool OverlayBrush::showOutline() const
+{
+	return m_ShowOutline;
+}
+
+void OverlayBrush::setOutlineType( OutlineType type )
+{
+	m_Outline = type;
+}
+
+void OverlayBrush::setSize( int, int )
+{
+	// no size
+}
+
+void OverlayBrush::setLocation( int x, int y )
+{
+	m_X = x;
+	m_Y = y;
+}
+
+void OverlayBrush::move( int x, int y )
+{
+	m_X += x;
+	m_Y += y;
+}
+
+int OverlayBrush::x()
+{
+	return m_X;
+}
+
+int OverlayBrush::y()
+{
+	return m_Y;
+}
+
+int OverlayBrush::width()
+{
+	return 0;
+}
+
+int OverlayBrush::height()
+{
+	return 0;
+}
+
+void OverlayBrush::drawShape( Cairo::RefPtr<Cairo::Context> cc, int width, int height, int hscale, int vscale )
+{
+	if( m_pBrush ) {
+		// store context
+		cc->save();
+		// transform to brush location
+		cc->translate( (m_X-m_pBrush->offsetX())*hscale, (m_Y-m_pBrush->offsetY())*vscale );
+		// draw brush
+		if( m_ShowBrush ) {
+			cc->save();
+			cc->scale(hscale, vscale);
+			//cc->rectangle( 0, 0, m_pBrush->width(), m_pBrush->height() );
+			Cairo::RefPtr<Cairo::SurfacePattern> sp = Cairo::SurfacePattern::create( m_pBrush->getImage(*m_pPalette) );
+			sp->set_filter(Cairo::FILTER_FAST);
+			cc->set_source(sp);
+			//cc->mask(sp);
+			cc->paint();
+			cc->restore();
+		}
+		// draw outline
+		if( m_ShowOutline ) {
+			// set path
+			switch( m_Outline ) {
+				case OUTLINE_RECT:
+					cc->rectangle( 0.5, 0.5,
+					               double(m_pBrush->width() *hscale)-1.0,
+					               double(m_pBrush->height()*vscale)-1.0 );
+					break;
+				case OUTLINE_SHAPED:
+				{
+					int x1, y1, x2 = -1, y2 = -1;
+					for( unsigned int i = 0; i < m_OutlinePath.size(); i+=2 ) {
+						x1 = m_OutlinePath[i].first; y1 = m_OutlinePath[i].second;
+						bool rel = x1 == x2 && y1 == y2;
+						x2 = m_OutlinePath[i+1].first; y2 = m_OutlinePath[i+1].second;
+						if( !rel ) {
+							double dsx = (x2>x1)||(y2<y1) ? +0.5:-0.5;
+							double dsy = (x2>x1)||(y2>y1) ? +0.5:-0.5;
+							cc->move_to( dsx+x1*hscale, dsy+y1*vscale );
+						}
+						double dex = (x2<x1)||(y2<y1) ? +0.5:-0.5;
+						double dey = (x2>x1)||(y2<y1) ? +0.5:-0.5;
+						cc->line_to( dex+x2*hscale, dey+y2*vscale );
+					}
+					break;
+				}
+			}
+			// draw
+			cc->set_line_width( m_SecWidth );
+			cc->set_source_rgba( m_SecR, m_SecG, m_SecB, m_SecA );
+			cc->stroke_preserve();
+			cc->set_line_width( m_PriWidth );
+			cc->set_source_rgba( m_PriR, m_PriG, m_PriB, m_PriA );
+			if( m_PriWidth == m_SecWidth ) {
+				std::vector<double> p({double(2*m_PriWidth), double(4*m_PriWidth)});
+				cc->set_dash( p, 0 );
+				cc->stroke();
+				cc->unset_dash();
+			} else
+				cc->stroke();
+		}
+		// restore context
+		cc->restore();
+	}
+}
 
 } // namespace Polka 
-
-

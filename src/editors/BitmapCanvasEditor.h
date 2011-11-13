@@ -73,6 +73,7 @@ private:
 	int m_ActiveTool;
 	bool m_ToolHold;
 	OverlayPainter::Shape *m_pToolMarker;
+	OverlayBrush m_BrushMarker;
 
 	ToolSelectPanel m_ToolSelectPanel;
 	//ToolGridPanel m_ToolGridPanel;

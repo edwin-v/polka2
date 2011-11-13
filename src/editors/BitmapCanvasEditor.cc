@@ -131,6 +131,10 @@ void BitmapCanvasEditor::createTools( ToolButtonWindow& tw )
 	// TOOL_BRUSH: create brush tool
 	tw.addTool( rm.getIcon("canvasedit_tool_brush"), &m_ToolBrushPanel );
 	m_ToolBrushPanel.signalBrushSelected().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::changeBrush) );
+	m_Overlay.add(15, &m_BrushMarker);
+	m_BrushMarker.setPrimaryPen( 1, 1, 1, 1 );
+	m_BrushMarker.setSecondaryPen( 1, 0, 0, 0 );
+	m_BrushMarker.setOutlineType( OverlayBrush::OUTLINE_SHAPED );
 	
 	// TOOL_CHANGECOLOR: create color replace tool
 	tw.addTool( rm.getIcon("canvasedit_tool_changecolor"), &m_ToolBrushPanel );
@@ -188,6 +192,7 @@ void BitmapCanvasEditor::on_show()
 void BitmapCanvasEditor::setFGColor( int col )
 {
 	m_FGColor = col;
+	if( m_CurrentTool == TOOL_BRUSH ) m_pBrush->setColor(col);
 }
 
 void BitmapCanvasEditor::setBGColor( int col )
@@ -210,8 +215,13 @@ void BitmapCanvasEditor::changeBrush( int id )
 	if( id >= 0 && id < int(m_Brushes.size()) ) {
 		m_pBrush = m_Brushes[id];
 		m_pBrush->setColor( m_FGColor );
-	} else
+		m_BrushMarker.setBrush( *m_pBrush, canvas().palette() );
+	} else {
 		m_pBrush = 0;
+		m_BrushMarker.unsetBrush();
+	}
+	// redraw to show new brush
+	queue_draw();
 }
 
 void BitmapCanvasEditor::changeCursor( Glib::RefPtr<Gdk::Cursor> cursor )
@@ -1095,6 +1105,9 @@ void BitmapCanvasEditor::brushInit()
 	// default brush
 	if( !m_pBrush )
 		m_pBrush = m_Brushes[0];
+	// show marker
+	m_BrushMarker.setLocation( m_PixX, m_PixY );
+	m_BrushMarker.setVisible();
 }
 
 /**
@@ -1123,22 +1136,36 @@ bool BitmapCanvasEditor::brushActivate( guint button, guint mods )
  */
 bool BitmapCanvasEditor::brushUpdate( guint mods )
 {
+	// update around current marker
+	canvasChanged( Gdk::Rectangle( m_BrushMarker.x() - m_pBrush->offsetX(),
+	                               m_BrushMarker.y() - m_pBrush->offsetY(),
+	                               m_pBrush->width(),
+	                               m_pBrush->height() ) );
+	// always update brush color
+	if( checkAccMods(ACC_SECCOL, mods) ) {
+		if( m_PenColor != m_BGColor ) {
+			m_PenColor = m_BGColor;
+			m_pBrush->setColor( m_BGColor );
+		}				
+	} else {
+		if( m_PenColor != m_FGColor ) {
+			m_PenColor = m_FGColor;
+			m_pBrush->setColor( m_FGColor );
+		}				
+	}
+	
 	if( m_DragPrimary ) {
-		// color changed?
-		if( checkAccMods(ACC_SECCOL, mods) ) {
-			if( m_PenColor != m_BGColor ) {
-				m_PenColor = m_BGColor;
-				m_pBrush->setColor( m_BGColor );
-			}				
-		} else {
-			if( m_PenColor != m_FGColor ) {
-				m_PenColor = m_FGColor;
-				m_pBrush->setColor( m_FGColor );
-			}				
-		}
 		// draw
+		m_BrushMarker.setLocation( m_PixX, m_PixY );
 		canvas().draw( m_PixX, m_PixY, *m_pBrush );
 		return true;
+	} else {
+		m_BrushMarker.setLocation( m_PixX, m_PixY );
+		// update around new marker
+		canvasChanged( Gdk::Rectangle( m_PixX - m_pBrush->offsetX(),
+		                               m_PixY - m_pBrush->offsetY(),
+		                               m_pBrush->width(),
+		                               m_pBrush->height() ) );
 	}
 	return false;
 }
@@ -1161,6 +1188,13 @@ bool BitmapCanvasEditor::brushRelease( guint button )
  */
 void BitmapCanvasEditor::brushClean()
 {
+	if( m_pBrush && m_BrushMarker.isVisible() ) {
+		m_BrushMarker.setVisible(false);
+		canvasChanged( Gdk::Rectangle( m_PixX - m_pBrush->offsetX(),
+		                               m_PixY - m_pBrush->offsetY(),
+		                               m_pBrush->width(),
+		                               m_pBrush->height() ) );
+	}
 }
 
 

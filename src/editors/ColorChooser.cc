@@ -24,6 +24,9 @@ ColorChooser::ColorChooser()
 	m_Selector.signalColorClicked().connect( sigc::mem_fun(*this, &ColorChooser::onColorClicked ) );
 	m_Selector.signalColorDoubleClicked().connect( sigc::mem_fun(*this, &ColorChooser::onDoubleClick ) );
 
+	// default to unused colors
+	m_FGColor = m_BGColor = -1;
+
 	show_all_children();
 }
 
@@ -82,11 +85,16 @@ void ColorChooser::setPalette( const Palette *pal )
 	m_pPalette = pal;
 	m_Selector.setPalette( pal );
 	if( pal ) {
-		//m_ColorFrame.set( 0.5, 0.5, 0.5*ceil(double(pal->size())/2), false );
-		setFGColor(m_FGColor);
-		setBGColor(m_BGColor);
+		// correct colors
+		int fg = m_FGColor, bg = m_BGColor;
+		if( fg < 0 || fg >= pal->size() ) fg = pal->size()-1;
+		if( bg < 0 || bg >= pal->size() ) bg = 0;
+		// force signals
+		m_FGColor = m_BGColor = -1;
+		// set colors
+		setFGColor(fg);
+		setBGColor(bg);
 	} else {
-		//m_ColorFrame.set( 0.5, 0.5, 1.0, false );
 		m_Preview.setFGColor(1,1,1);
 		m_Preview.setBGColor(0,0,0);
 	}
