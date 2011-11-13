@@ -65,6 +65,7 @@ CanvasEditor::CanvasEditor()
 	m_ColorChooser.signalBGChanged().connect( sigc::mem_fun( m_CanvasView, &BitmapCanvasEditor::setBGColor ) );
 	m_CanvasView.signalChangeFGColor().connect( sigc::mem_fun( m_ColorChooser, &ColorChooser::setFGColor ) );
 	m_CanvasView.signalChangeBGColor().connect( sigc::mem_fun( m_ColorChooser, &ColorChooser::setBGColor ) );
+	m_CanvasView.signalChangeTool().connect( sigc::mem_fun( m_ToolWindow, &ToolButtonWindow::activateTool ) );
 
 }
 

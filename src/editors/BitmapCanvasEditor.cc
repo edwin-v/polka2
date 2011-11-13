@@ -89,6 +89,7 @@ BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	accAdd( ACC_MOD_SQUARE        , "square"           , 0, 0, MOD_SHIFT );
 
 	m_pBrush = 0;
+	m_pTempBrush = 0;
 	m_pSelectionBrush = 0;
 	
 	createBrushList(m_Brushes);
@@ -105,7 +106,8 @@ void BitmapCanvasEditor::createTools( ToolButtonWindow& tw )
 	ResourceManager& rm = ResourceManager::get();
 	// TOOL_SELECT: create rectange select tool
 	tw.addTool( rm.getIcon("canvasedit_tool_select"), &m_ToolSelectPanel );
-	//m_ToolSelectPanel.toBrushClicked().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::createBrushFromSelection) );
+	m_ToolSelectPanel.floatModeChanged().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::rectSelectModeChanged) );
+	m_ToolSelectPanel.toBrushClicked().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::rectSelectToBrush) );
 	m_Overlay.add( 10, new OverlayRectangle( 10, 10, 5, 5 ) );
 	m_Overlay.add( 11, &m_SelectionMarker );
 	m_SelectionMarker.setPrimaryPen( 1, 1, 1, 1 );
@@ -203,6 +205,7 @@ void BitmapCanvasEditor::setFGColor( int col )
 void BitmapCanvasEditor::setBGColor( int col )
 {
 	m_BGColor = col;
+	if( m_CurrentTool == TOOL_SELECT ) rectSelectModeChanged();
 }
 
 IntSignal BitmapCanvasEditor::signalChangeFGColor()
@@ -213,6 +216,11 @@ IntSignal BitmapCanvasEditor::signalChangeFGColor()
 IntSignal BitmapCanvasEditor::signalChangeBGColor()
 {
 	return m_SignalChangeBGColor;
+}
+
+IntSignal BitmapCanvasEditor::signalChangeTool()
+{
+	return m_SignalChangeTool;
 }
 
 void BitmapCanvasEditor::changeBrush( int id )
@@ -286,7 +294,7 @@ void BitmapCanvasEditor::changeTool( int id )
 {
 	if( m_CurrentTool == id ) return;
 
-	switch( id ) {
+	switch( m_CurrentTool ) {
 		case TOOL_SELECT:
 			rectSelectClean();
 			break;
@@ -670,7 +678,14 @@ void BitmapCanvasEditor::resetActiveTool()
 void BitmapCanvasEditor::rectSelectInit()
 {
 	changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_selectrect") );
-	m_ToolMode = SELECT_MODE_NONE;
+	// init floating mode if a selection exists
+	if( m_pSelectionBrush ) {
+		m_ToolMode = SELECT_MODE_MOVEFLOATING;
+		m_SelectionMarker.setVisible();
+		rectSelectModeChanged();
+		rectSelectUpdate(0);
+	} else
+		m_ToolMode = SELECT_MODE_NONE;
 }
 
 /**
@@ -685,13 +700,27 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 		// create new brush from selection
 		if( m_pSelectionBrush ) delete m_pSelectionBrush;
 		m_pSelectionBrush = createBrushFromSelection();
-		// change background color to transparent
-		m_pSelectionBrush->setTransparentColor( m_BGColor );
+		if( !m_ToolSelectPanel.solidMode() )
+			m_pSelectionBrush->setTransparentColor(m_BGColor);
 		// attach to marker
 		m_SelectionMarker.setBrush( *m_pSelectionBrush, canvas().palette() );
 		m_SelectionMarker.setLocation( m_Overlay.shape(10).x() + m_pSelectionBrush->offsetX(),
 		                               m_Overlay.shape(10).y() + m_pSelectionBrush->offsetY() );
 		m_SelectionMarker.setVisible();
+		
+		// remove background if needed
+		if( !m_ToolSelectPanel.copyMode() ) {
+			// draw rectangle
+			canvas().startAction( _("Clear selection background"), ResourceManager::get().getIcon("canvasedit_tool_select") );
+			m_Pen.setColor( m_BGColor );
+			canvas().drawRect( m_Overlay.shape(10).x(), 
+			                   m_Overlay.shape(10).y(), 
+			                   m_Overlay.shape(10).x() + m_pSelectionBrush->width()-1, 
+			                   m_Overlay.shape(10).y() + m_pSelectionBrush->height()-1,
+			                   m_Pen, m_Pen );
+			canvas().finishAction();
+		}
+		m_ToolSelectPanel.setHasFloating();
 		
 	} else if( checkAccButton(ACC_ACTIVATE, button) ) {
 		
@@ -707,6 +736,8 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 			delete m_pSelectionBrush;
 			m_pSelectionBrush = 0;
 			rectSelectUpdate( mods );
+
+			m_ToolSelectPanel.setHasFloating(false);
 			
 		} else if(m_MouseInArea || m_ToolMode == SELECT_MODE_MOVEFLOATING) {
 			// start drag
@@ -912,7 +943,8 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 		int y2 = y1-1 + shape.height() * vscale();
 		if( m_MouseX <= x1-6 || m_MouseX >= x2+6 || m_MouseY <= y1-6 || m_MouseY >= y2+6 ) {
 			// outside selection
-			rectSelectInit();
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_selectrect") );
+			m_ToolMode = SELECT_MODE_NONE;
 		} else if( m_MouseY < y1+3 ) {
 			// top edge
 			if( m_MouseX < x1+3 ) {
@@ -969,7 +1001,8 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 		}
 	} else {
 		// reset mode if selection was removed
-		rectSelectInit();
+		changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_selectrect") );
+		m_ToolMode = SELECT_MODE_NONE;
 	}
 	
 	return false;
@@ -996,8 +1029,43 @@ bool BitmapCanvasEditor::rectSelectRelease( guint button )
 void BitmapCanvasEditor::rectSelectClean()
 {
 	m_Overlay.shape(10).setVisible(false);
+	m_SelectionMarker.setVisible(false);
+	queue_draw();
 }
 
+/**
+ * Handle changes in mode and background color
+ */
+void BitmapCanvasEditor::rectSelectModeChanged()
+{
+	if( m_SelectionMarker.isVisible() ) {
+		if( m_ToolSelectPanel.solidMode() )
+			m_pSelectionBrush->setTransparentColor(-1);
+		else
+			m_pSelectionBrush->setTransparentColor(m_BGColor);
+		// update screen area
+		int sx = m_SelectionMarker.x() - m_pSelectionBrush->offsetX(), sw = m_pSelectionBrush->width();
+		int sy = m_SelectionMarker.y() - m_pSelectionBrush->offsetY(), sh = m_pSelectionBrush->height();
+		canvasChanged( Gdk::Rectangle(sx-2, sy-2, sw+4, sh+4) );
+	}
+}
+
+void BitmapCanvasEditor::rectSelectToBrush()
+{
+	if( m_pTempBrush ) delete m_pTempBrush;
+	// try conversion to shape
+	m_pTempBrush = m_pSelectionBrush->convertToShape();
+	// assign to current draw brush
+	if( m_pTempBrush ) {
+		m_pTempBrush->setColor(m_FGColor);
+		m_pBrush = m_pTempBrush;
+	} else
+		m_pBrush = m_pSelectionBrush;
+	// update brush marker
+	m_BrushMarker.setBrush( *m_pBrush, canvas().palette() );
+	// switch to brush tool
+	m_SignalChangeTool.emit( TOOL_BRUSH );
+}
 
 /*
  *--------------
@@ -1568,7 +1636,7 @@ bool BitmapCanvasEditor::rectRelease( guint button, guint mods )
 		// prequeue marker removal
 		int x = m_pToolMarker->x(), y = m_pToolMarker->y(), w = m_pToolMarker->width(), h = m_pToolMarker->height();
 		canvasChanged( Gdk::Rectangle( min(x, x+w)-1, min(y, y+h)-1, 3+abs(w), 3+abs(h) ) );
-		// draw line
+		// draw rectangle
 		canvas().startAction( _("Rectangle"), ResourceManager::get().getIcon("canvasedit_tool_drawrect") );
 		canvas().drawRect( m_DragStartX, m_DragStartY, m_DragEndX, m_DragEndY, m_Pen, fillPen );
 		canvas().finishAction();

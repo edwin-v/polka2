@@ -9,6 +9,7 @@ namespace Polka {
 static const int NOOFFS = -100000;
 
 class Palette;
+class Shape;
 
 class Brush : public Pen
 {
@@ -26,6 +27,8 @@ public:
 	
 	// create image surface
 	Cairo::RefPtr<Cairo::ImageSurface> getImage( const Palette& pal );
+
+	Shape *convertToShape();
 
 protected:
 	int *m_Data;

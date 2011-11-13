@@ -31,6 +31,7 @@ public:
 	void setBGColor( int col );
 	IntSignal signalChangeFGColor();
 	IntSignal signalChangeBGColor();
+	IntSignal signalChangeTool();
 
 protected:
 	//virtual bool on_scroll_event(GdkEventScroll* event);
@@ -66,6 +67,7 @@ private:
 	bool m_ZoomMode;
 
 	IntSignal m_SignalChangeFGColor, m_SignalChangeBGColor;
+	IntSignal m_SignalChangeTool;
 	//Glib::RefPtr<Gtk::ActionGroup> m_refActionGroup;
 	
 	// tools
@@ -89,7 +91,7 @@ private:
 	bool m_PickFG;
 	std::vector<Brush*> m_Brushes;
 	Glib::RefPtr<Gdk::Cursor> m_refToolCursor;
-	Brush *m_pBrush, *m_pSelectionBrush;
+	Brush *m_pBrush, *m_pTempBrush, *m_pSelectionBrush;
 
 
 	void screenDraw( int x, int y, bool use_brush = false );
@@ -114,6 +116,8 @@ private:
 	bool rectSelectUpdate( guint mods );
 	bool rectSelectRelease( guint button );
 	void rectSelectClean();
+	void rectSelectModeChanged();
+	void rectSelectToBrush();
 
 	void eyeDropperInit();
 	bool eyeDropperActivate( guint button, guint mods );

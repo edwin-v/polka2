@@ -2,10 +2,10 @@
 #include "Palette.h"
 #include <cstring>
 #include "cairomm/context.h"
-#include <iostream>
-#include <iomanip>
+
+
 namespace Polka {
-using namespace std;
+
 /*
  * Brush -- Full color brush
  */
@@ -59,6 +59,7 @@ void Brush::setTransparentColor( int col )
 					m_Data[p] = m_TransparentColor;
 				else if( m_Data[p] == col )
 					m_Data[p] = -1;
+				p++;
 			}
 		}
 		m_TransparentColor = col;
@@ -99,10 +100,29 @@ Cairo::RefPtr<Cairo::ImageSurface> Brush::getImage( const Palette& pal )
 				addr += 4;
 			p++;
 		}
-		cout << endl;
 	}
 	m_pRefPal = &pal;
 	return m_refImage;
+}
+
+/* convert to shape if only a single color */
+Shape *Brush::convertToShape()
+{
+	// count colors
+	int c = -1, p = 0;
+	for( int y = 0; y < m_Height; y++ )
+		for( int x = 0; x < m_Width; x++ ) {
+			if( m_Data[p] != -1 ) {
+				if( c == -1 )
+					c = m_Data[p];
+				else if( m_Data[p] != c )
+					return 0;
+			}
+			p++;
+		}
+	Shape *s = new Shape(m_Width, m_Height);
+	s->setData(m_Data);
+	return s;
 }
 
 /*

@@ -2,7 +2,7 @@
 #define _POLKA_TOOLSELECTPANEL_H_
 
 #include <gtkmm/box.h>
-#include <gtkmm/checkbutton.h>
+#include <gtkmm/radiobutton.h>
 
 namespace Polka {
 
@@ -12,10 +12,17 @@ public:
 	ToolSelectPanel();
 	~ToolSelectPanel();
 
-	Glib::SignalProxy0< void > toBrushClicked();
+	Glib::SignalProxy0<void> floatModeChanged();
+	Glib::SignalProxy0<void> toBrushClicked();
+
+	void setHasFloating( bool value = true );
+
+	bool copyMode() const;
+	bool solidMode() const;
 
 private:
-	//Gtk::CheckButton m_FillCheck;
+	Gtk::RadioButton m_Copy, m_Cut;
+	Gtk::RadioButton m_Solid, m_Transparent;
 	Gtk::Button m_ToBrush;
 };
 
