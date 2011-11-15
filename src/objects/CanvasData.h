@@ -39,6 +39,8 @@ public:
 	virtual void drawLine( int x1, int y1, int x2, int y2, const Pen& pen );
 	virtual void drawRect( int x1, int y1, int x2, int y2, const Pen& lpen, const Pen& fpen );
 	virtual Gdk::Rectangle bucketFill( int x, int y, const Pen& pen );
+	virtual void flip( int x1, int y1, int x2, int y2, bool vertical = false );
+	virtual void rotate( int x, int y, int sz, bool ccw = false );
 
 	virtual void applyBrush( int x, int y, const Pen& pen );
 

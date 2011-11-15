@@ -144,7 +144,6 @@ void Canvas::clipRectangle( int& x1, int& y1, int& x2, int& y2 )
 	// right orientation
 	if( x2 < x1 ) swap(x1, x2);
 	if( y2 < y1 ) swap(y1, y2);
-std::cout << std::dec << "(" << m_ClipX1 << ", " << m_ClipY1 << ")-("<< m_ClipX2 << ", " << m_ClipY2 << ")\n";
 	
 	if( x1 < m_ClipX1 ) x1 = m_ClipX1;
 	if( y1 < m_ClipY1 ) y1 = m_ClipY1;
@@ -319,6 +318,26 @@ void Canvas::bucketFill( int x, int y, const Pen& pen )
 		// partial update self and dependencies
 		update(false);
 	}
+}
+
+void Canvas::flip( int x, int y, int w, int h, bool vertical )
+{
+	int x2 = x + w -1, y2 = y + h -1;
+	clipRectangle( x, y, x2, y2 );
+	m_pData->flip( x, y, x2, y2, vertical );
+	
+	addChangedRect( Gdk::Rectangle(x, y, 1+x2-x, 1+y2-y) );
+	update(false);
+}
+
+void Canvas::rotate( int x, int y, int sz, bool ccw )
+{
+	if( x < m_ClipX1 || y < m_ClipY1 || x+sz-1 > m_ClipX2 || y+sz-1 > m_ClipY2 ) return;
+	
+	m_pData->rotate( x, y, sz, ccw );
+	
+	addChangedRect( Gdk::Rectangle(x, y, sz, sz) );
+	update(false);
 }
 
 Brush *Canvas::createBrushFromRect( int x, int y, int w, int h, int bg )

@@ -158,7 +158,19 @@ private:
 	bool fillActivate( guint button, guint mods );
 	//bool fillUpdate( guint mods );
 	//bool fillRelease( guint button );
-	//void Clean();
+	//void fillClean();
+
+	void flipInit();
+	bool flipActivate( guint button, guint mods );
+	bool flipUpdate( guint mods );
+	//bool flipRelease( guint button );
+	void flipClean();
+
+	void rotateInit();
+	bool rotateActivate( guint button, guint mods );
+	bool rotateUpdate( guint mods );
+	//bool rotateRelease( guint button );
+	void rotateClean();
 
 };
 

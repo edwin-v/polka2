@@ -55,6 +55,8 @@ public:
 	virtual void drawLine( int x1, int y1, int x2, int y2, const Pen& pen );
 	virtual void drawRect( int x1, int y1, int x2, int y2, const Pen& lpen, const Pen& fpen );
 	virtual void bucketFill( int x, int y, const Pen& pen );
+	virtual void flip( int x, int y, int w, int h, bool vertical = false );
+	virtual void rotate( int x, int y, int sz, bool ccw = false );
 
 	// clipping
 	void setClipRectangle( int x = -1, int y = -1, int w = -1, int h = -1 );

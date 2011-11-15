@@ -53,7 +53,9 @@ enum {
 	TOOL_CHANGECOLOR,
 	TOOL_LINE,
 	TOOL_RECT,
-	TOOL_FILL
+	TOOL_FILL,
+	TOOL_FLIP,
+	TOOL_ROTATE
 };
 
 const int TOOLMARKER_ID = 9999;
@@ -64,8 +66,10 @@ enum { SELECT_MODE_NONE, SELECT_MODE_MOVE, SELECT_MODE_SCALEUP,
        SELECT_MODE_SCALEUPRIGHT, SELECT_MODE_SCALEDOWNRIGHT,
        SELECT_MODE_MOVEFLOATING, SELECT_MODE_APPLYFLOATING };
 
+enum { FLIP_MODE_NONE, FLIP_MODE_FLOAT, FLIP_MODE_SELECT, FLIP_MODE_ALL };
+
 enum { ACC_ACTIVATE = 1, ACC_SELECT_TILE, ACC_SELECT_FLOAT,
-       ACC_COLORPICK_FG, ACC_COLORPICK_BG, ACC_COLORPICK_QUICK, ACC_SECCOL,
+       ACC_COLORPICK_FG, ACC_COLORPICK_BG, ACC_COLORPICK_QUICK, ACC_MOD_SEC,
        ACC_MOD_SQUARE };
 
 
@@ -85,7 +89,7 @@ BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	accAdd( ACC_COLORPICK_FG      , "colorpick/fg"     , 1 );
 	accAdd( ACC_COLORPICK_BG      , "colorpick/bg"     , 3 );
 	accAdd( ACC_COLORPICK_QUICK   , "colorpick/quick"  , 3 );
-	accAdd( ACC_SECCOL            , "secondary_color"  , 0, 0, MOD_CTRL );
+	accAdd( ACC_MOD_SEC           , "secondary"        , 0, 0, MOD_CTRL );
 	accAdd( ACC_MOD_SQUARE        , "square"           , 0, 0, MOD_SHIFT );
 
 	m_pBrush = 0;
@@ -108,7 +112,7 @@ void BitmapCanvasEditor::createTools( ToolButtonWindow& tw )
 	tw.addTool( rm.getIcon("canvasedit_tool_select"), &m_ToolSelectPanel );
 	m_ToolSelectPanel.floatModeChanged().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::rectSelectModeChanged) );
 	m_ToolSelectPanel.toBrushClicked().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::rectSelectToBrush) );
-	m_Overlay.add( 10, new OverlayRectangle( 10, 10, 5, 5 ) );
+	m_Overlay.add( 10, new OverlayRectangle( 0, 0, 0, 0 ) );
 	m_Overlay.add( 11, &m_SelectionMarker );
 	m_SelectionMarker.setPrimaryPen( 1, 1, 1, 1 );
 	m_SelectionMarker.setSecondaryPen( 1, 0, 0, 0 );
@@ -154,6 +158,12 @@ void BitmapCanvasEditor::createTools( ToolButtonWindow& tw )
 
 	// TOOL_FILL: create fill tool
 	tw.addTool( rm.getIcon("canvasedit_tool_fill") );
+
+	// TOOL_FILL: create fill tool
+	tw.addTool( rm.getIcon("canvasedit_tool_flip") );
+
+	// TOOL_FILL: create fill tool
+	tw.addTool( rm.getIcon("canvasedit_tool_rotate") );
 
 	// connect tool window
 	tw.signalSelectTool().connect( sigc::mem_fun(*this, &BitmapCanvasEditor::changeTool) );
@@ -319,6 +329,12 @@ void BitmapCanvasEditor::changeTool( int id )
 		case TOOL_FILL:
 			//fillClean();
 			break;
+		case TOOL_FLIP:
+			flipClean();
+			break;
+		case TOOL_ROTATE:
+			rotateClean();
+			break;
 		default:
 			break;
 	}
@@ -351,6 +367,12 @@ void BitmapCanvasEditor::changeTool( int id )
 			break;
 		case TOOL_FILL:
 			fillInit();
+			break;
+		case TOOL_FLIP:
+			flipInit();
+			break;
+		case TOOL_ROTATE:
+			rotateInit();
 			break;
 		default:
 			changeCursor( Gdk::Cursor::create(Gdk::ARROW) );
@@ -388,6 +410,12 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 			break;
 		case TOOL_FILL:
 			res = fillActivate(but, event->state);
+			break;
+		case TOOL_FLIP:
+			res = flipActivate(but, event->state);
+			break;
+		case TOOL_ROTATE:
+			res = rotateActivate(but, event->state);
 			break;
 		default:
 			break;
@@ -439,6 +467,12 @@ bool BitmapCanvasEditor::on_motion_notify_event(GdkEventMotion* event)
 			break;
 		case TOOL_RECT:
 			res = rectUpdate( event->state );
+			break;
+		case TOOL_FLIP:
+			res = flipUpdate( event->state );
+			break;
+		case TOOL_ROTATE:
+			res = rotateUpdate( event->state );
 			break;
 		default:
 			break;
@@ -681,7 +715,6 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 {
 	if( m_ToolMode == SELECT_MODE_MOVE && checkAccButton( ACC_SELECT_FLOAT, button, mods ) ) {
 		// change to floating selection
-		m_Overlay.shape(10).setVisible(false);
 		// create new brush from selection
 		if( m_pSelectionBrush ) delete m_pSelectionBrush;
 		m_pSelectionBrush = createBrushFromSelection();
@@ -706,6 +739,9 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 			canvas().finishAction();
 		}
 		m_ToolSelectPanel.setHasFloating();
+		// remove selection
+		m_Overlay.shape(10).setVisible(false);
+		m_Overlay.shape(10).setSize(0,0);
 		
 	} else if( checkAccButton(ACC_ACTIVATE, button) ) {
 		
@@ -1162,7 +1198,7 @@ bool BitmapCanvasEditor::penUpdate( guint mods )
 {
 	if( m_DragPrimary ) {
 		// color changed?
-		if( checkAccMods(ACC_SECCOL, mods) ) {
+		if( checkAccMods(ACC_MOD_SEC, mods) ) {
 			if( m_PenColor != m_BGColor ) {
 				m_PenColor = m_BGColor;
 				m_Pen.setColor( m_BGColor );
@@ -1260,7 +1296,7 @@ bool BitmapCanvasEditor::brushUpdate( guint mods )
 	                               m_pBrush->width(),
 	                               m_pBrush->height() ) );
 	// always update brush color
-	if( checkAccMods(ACC_SECCOL, mods) ) {
+	if( checkAccMods(ACC_MOD_SEC, mods) ) {
 		if( m_PenColor != m_BGColor ) {
 			m_PenColor = m_BGColor;
 			m_pBrush->setColor( m_BGColor );
@@ -1361,7 +1397,7 @@ bool BitmapCanvasEditor::chgColorUpdate( guint mods )
 {
 	if( m_DragPrimary ) {
 		// color changed?
-		if( checkAccMods(ACC_SECCOL, mods) ) {
+		if( checkAccMods(ACC_MOD_SEC, mods) ) {
 			if( m_PenColor != m_BGColor ) {
 				m_PenColor = m_BGColor;
 				m_pBrush->setColor( m_BGColor );
@@ -1497,7 +1533,7 @@ bool BitmapCanvasEditor::lineRelease( guint button, guint mods )
 			return true;
 		}
 		// set pen color
-		if( checkAccMods( ACC_SECCOL, mods ) )
+		if( checkAccMods( ACC_MOD_SEC, mods ) )
 			m_Pen.setColor( m_BGColor );
 		else
 			m_Pen.setColor( m_FGColor );
@@ -1611,7 +1647,7 @@ bool BitmapCanvasEditor::rectRelease( guint button, guint mods )
 		}
 		// set pen colors
 		Pen fillPen;
-		if( checkAccMods( ACC_SECCOL, mods ) ) {
+		if( checkAccMods( ACC_MOD_SEC, mods ) ) {
 			m_Pen.setColor( m_BGColor );
 			fillPen.setColor( m_FGColor );
 		} else {
@@ -1666,7 +1702,7 @@ bool BitmapCanvasEditor::fillActivate( guint button, guint mods )
 	if( checkAccButton( ACC_ACTIVATE, button, mods ) ) {
 		// only start if primary button not previously pressed
 		if( m_MouseInArea ) {
-			if( checkAccMods( ACC_SECCOL, mods ) )
+			if( checkAccMods( ACC_MOD_SEC, mods ) )
 				m_Pen.setColor( m_BGColor );
 			else
 				m_Pen.setColor( m_FGColor );
@@ -1677,6 +1713,187 @@ bool BitmapCanvasEditor::fillActivate( guint button, guint mods )
 		return true;
 	}
 	return false;
+}
+
+
+/*
+ *--------------
+ * Flip
+ *--------------
+ */ 
+
+void BitmapCanvasEditor::flipInit()
+{
+	changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_horflip") );
+	if( m_pSelectionBrush )
+		m_SelectionMarker.setVisible();
+	else if( m_Overlay.shape(10).width() )
+		m_Overlay.shape(10).setVisible();
+	m_ToolMode = FLIP_MODE_NONE;
+}
+
+bool BitmapCanvasEditor::flipActivate( guint button, guint mods )
+{
+	if( m_ToolMode != FLIP_MODE_NONE && checkAccButton( ACC_ACTIVATE, button, mods ) ) {
+		bool sec = checkAccMods( ACC_MOD_SEC, mods );
+		if( m_ToolMode == FLIP_MODE_FLOAT ) {
+			// flip floating selection
+			m_pSelectionBrush->flip( sec );
+			m_SelectionMarker.setBrush( *m_pSelectionBrush, canvas().palette() );
+			canvasChanged( Gdk::Rectangle(m_SelectionMarker.x()-m_pSelectionBrush->offsetX()-2,
+			                              m_SelectionMarker.y()-m_pSelectionBrush->offsetY()-2,
+			                              m_pSelectionBrush->width()+4,
+			                              m_pSelectionBrush->height()+4) );
+		} else if( m_ToolMode == FLIP_MODE_SELECT ) {
+			// flip static selection	
+			canvas().startAction( _("Flip selection"), ResourceManager::get().getIcon("canvasedit_tool_flip") );
+			int x = m_Overlay.shape(10).x(), y = m_Overlay.shape(10).y();
+			int w = m_Overlay.shape(10).width(), h = m_Overlay.shape(10).height();
+			canvas().flip(x, y, w, h, sec );
+			canvas().finishAction();
+			canvasChanged( Gdk::Rectangle(x-2, y-2, w+4, h+4) );
+		} else {
+			// flip whole canvas
+			canvas().startAction( _("Flip"), ResourceManager::get().getIcon("canvasedit_tool_flip") );
+			canvas().flip( 0, 0, canvas().width(), canvas().height(), sec );
+			canvas().finishAction();
+			queue_draw();
+		}
+		return true;
+	}
+	return false;
+}
+
+bool BitmapCanvasEditor::flipUpdate( guint mods )
+{
+	// check if inside selection
+	int x1, x2, y1, y2;
+	if( m_SelectionMarker.isVisible() ) {
+		x1 = (m_SelectionMarker.x() - m_pSelectionBrush->offsetX()) * hscale() - dx();
+		y1 = (m_SelectionMarker.y() - m_pSelectionBrush->offsetY()) * vscale() - dy();
+		x2 = x1-1 + m_pSelectionBrush->width() * hscale();
+		y2 = y1-1 + m_pSelectionBrush->height() * vscale();
+		m_ToolMode = FLIP_MODE_FLOAT;
+	} else if( m_Overlay.shape(10).isVisible() ) {
+		x1 = m_Overlay.shape(10).x() * hscale() - dx();
+		y1 = m_Overlay.shape(10).y() * vscale() - dy();
+		x2 = x1-1 + m_Overlay.shape(10).width() * hscale();
+		y2 = y1-1 + m_Overlay.shape(10).height() * vscale();
+		m_ToolMode = FLIP_MODE_SELECT;
+	}
+	bool in_selection = m_MouseX >= x1 && m_MouseX <= x2 &&
+	                    m_MouseY >= y1 && m_MouseY <= y2;
+	if( !in_selection) m_ToolMode = FLIP_MODE_ALL;
+	
+	if( checkAccMods( ACC_MOD_SEC, mods ) ) {
+		if( in_selection )
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_verselflip") );
+		else
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_verflip") );
+	} else {
+		if( in_selection )
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_horselflip") );
+		else
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_horflip") );
+	}
+	return false;
+}
+
+void BitmapCanvasEditor::flipClean()
+{
+	m_SelectionMarker.setVisible(false);
+	m_Overlay.shape(10).setVisible(false);
+}
+
+
+
+/*
+ *--------------
+ * Rotate
+ *--------------
+ */ 
+
+void BitmapCanvasEditor::rotateInit()
+{
+	changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_cwrotate") );
+	if( m_pSelectionBrush )
+		m_SelectionMarker.setVisible();
+	else if( m_Overlay.shape(10).width() ) {
+		// only square non-floating selections
+		if( m_Overlay.shape(10).width() == m_Overlay.shape(10).height() )
+			m_Overlay.shape(10).setVisible();
+	}
+	m_ToolMode = FLIP_MODE_NONE;
+}	
+
+bool BitmapCanvasEditor::rotateActivate( guint button, guint mods )
+{
+	if( checkAccButton( ACC_ACTIVATE, button, mods ) ) {
+		bool sec = checkAccMods( ACC_MOD_SEC, mods );
+		if( m_ToolMode == FLIP_MODE_FLOAT ) {
+			// redraw current
+			canvasChanged( Gdk::Rectangle(m_SelectionMarker.x()-m_pSelectionBrush->offsetX()-2,
+			                              m_SelectionMarker.y()-m_pSelectionBrush->offsetY()-2,
+			                              m_pSelectionBrush->width()+4,
+			                              m_pSelectionBrush->height()+4) );
+			// flip floating selection
+			m_pSelectionBrush->rotate( sec );
+			m_SelectionMarker.setBrush( *m_pSelectionBrush, canvas().palette() );
+			// redraw new
+			canvasChanged( Gdk::Rectangle(m_SelectionMarker.x()-m_pSelectionBrush->offsetX()-2,
+			                              m_SelectionMarker.y()-m_pSelectionBrush->offsetY()-2,
+			                              m_pSelectionBrush->width()+4,
+			                              m_pSelectionBrush->height()+4) );
+		} else if( m_ToolMode == FLIP_MODE_SELECT ) {
+			// rotate static square selection	
+			canvas().startAction( _("Rotate selection"), ResourceManager::get().getIcon("canvasedit_tool_rotate") );
+			int x = m_Overlay.shape(10).x(), y = m_Overlay.shape(10).y();
+			int w = m_Overlay.shape(10).width();
+			canvas().rotate(x, y, w, sec );
+			canvas().finishAction();
+			canvasChanged( Gdk::Rectangle(x-2, y-2, w+4, w+4) );
+		}
+	}
+	return false;
+}
+
+bool BitmapCanvasEditor::rotateUpdate( guint mods )
+{
+	// check if inside selection
+	int x1, x2, y1, y2;
+	if( m_SelectionMarker.isVisible() ) {
+		x1 = (m_SelectionMarker.x() - m_pSelectionBrush->offsetX()) * hscale() - dx();
+		y1 = (m_SelectionMarker.y() - m_pSelectionBrush->offsetY()) * vscale() - dy();
+		x2 = x1-1 + m_pSelectionBrush->width() * hscale();
+		y2 = y1-1 + m_pSelectionBrush->height() * vscale();
+		m_ToolMode = FLIP_MODE_FLOAT;
+	} else if( m_Overlay.shape(10).isVisible() ) {
+		x1 = m_Overlay.shape(10).x() * hscale() - dx();
+		y1 = m_Overlay.shape(10).y() * vscale() - dy();
+		x2 = x1-1 + m_Overlay.shape(10).width() * hscale();
+		y2 = y1-1 + m_Overlay.shape(10).height() * vscale();
+		m_ToolMode = FLIP_MODE_SELECT;
+	}
+	bool in_selection = m_MouseX >= x1 && m_MouseX <= x2 &&
+	                    m_MouseY >= y1 && m_MouseY <= y2;
+	
+	if( in_selection ) {
+		if( checkAccMods( ACC_MOD_SEC, mods ) )
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_ccwrotate") );
+		else
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_cwrotate") );
+	} else {
+		changeCursor( Gdk::Cursor::create(Gdk::ARROW) );
+		m_ToolMode = FLIP_MODE_NONE;
+	}
+	
+	return false;
+}
+
+void BitmapCanvasEditor::rotateClean()
+{
+	m_SelectionMarker.setVisible(false);
+	m_Overlay.shape(10).setVisible(false);
 }
 
 

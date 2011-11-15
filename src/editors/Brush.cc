@@ -1,5 +1,6 @@
 #include "Brush.h"
 #include "Palette.h"
+#include "Functions.h"
 #include <cstring>
 #include "cairomm/context.h"
 
@@ -123,6 +124,64 @@ Shape *Brush::convertToShape()
 	Shape *s = new Shape(m_Width, m_Height);
 	s->setData(m_Data);
 	return s;
+}
+
+void Brush::flip( bool vertical )
+{
+	if( vertical ) {
+		int ym = m_Height/2;
+		for( int y = 0; y < ym; y++ ) {
+			for( int x = 0; x < m_Width; x++ ) {
+				int t = m_Data[y*m_Width+x];
+				m_Data[y*m_Width+x] = m_Data[(m_Height-1-y)*m_Width+x];
+				m_Data[(m_Height-1-y)*m_Width+x] = t;
+			}
+		}
+	} else {
+		int xm = m_Width/2;
+		for( int x = 0; x < xm; x++ ) {
+			for( int y = 0; y < m_Height; y++ ) {
+				int t = m_Data[y*m_Width+x];
+				m_Data[y*m_Width+x] = m_Data[y*m_Width+m_Width-1-x];
+				m_Data[y*m_Width+m_Width-1-x] = t;
+			}
+		}
+	}
+	m_refImage.clear();
+}
+
+void Brush::rotate( bool ccw )
+{
+	// temp copy data
+	int *dat = new int[m_Width*m_Height];
+	memcpy(dat, m_Data, m_Width*m_Height*sizeof(int));
+
+	int *src, dp, dl;
+	if( ccw ) {
+		src = &dat[m_Width-1];
+		dp = m_Width;
+		dl = -m_Width*m_Height-1;
+	} else {
+		src = &dat[m_Width*(m_Height-1)];
+		dp = -m_Width;
+		dl = m_Width*m_Height+1;
+	}
+	
+	// rotate
+	int *rotdat = m_Data;
+	for( int y = 0; y < m_Width; y++ ) {
+		for( int x = 0; x < m_Height; x++ ) {
+			*rotdat = *src;
+			src += dp;
+			rotdat++;
+		}
+		src += dl;
+	}
+
+	delete [] dat;
+	swap( m_Width, m_Height );
+	swap( m_DX, m_DY );
+	m_refImage.clear();
 }
 
 /*

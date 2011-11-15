@@ -29,6 +29,8 @@ public:
 	Cairo::RefPtr<Cairo::ImageSurface> getImage( const Palette& pal );
 
 	Shape *convertToShape();
+	void flip( bool vertical = false );
+	void rotate( bool ccw = false );
 
 protected:
 	int *m_Data;

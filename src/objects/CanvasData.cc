@@ -358,6 +358,74 @@ bool CanvasData::fillLine( int x, int y, char fg[4], char bg[4], Gdk::Rectangle&
 
 }
 
+void CanvasData::flip( int x1, int y1, int x2, int y2, bool vertical )
+{
+	if( vertical ) {
+		int ym = (y2-y1+1)/2;
+		int n = m_PixSize*(x2-x1+1);
+		char *tempdat = new char[n];
+		for( int y = 0; y < ym; y++ ) {
+			char *l1 = m_Data[y1+y] + m_PixSize*x1;
+			char *l2 = m_Data[y2-y] + m_PixSize*x1;
+			memcpy(tempdat, l1, n);
+			memcpy(l1, l2, n);
+			memcpy(l2, tempdat, n);
+		}
+		delete [] tempdat;
+	} else {
+		int xm = (x2-x1+1)/2;
+		for( int y = 0; y < m_Height; y++ ) {
+			char *p1 = m_Data[y] + x1*m_PixSize;
+			char *p2 = m_Data[y] + x2*m_PixSize;
+			for( int x = 0; x < xm; x++ ) {
+				for( int i = 0; i < m_PixSize; i++ ) {
+					char t = *p1;
+					*p1 = *p2;
+					*p2 = t;
+					p1++; p2++;
+				}
+				p2 -= 2*m_PixSize;
+			}
+		}
+	}
+}
+
+void CanvasData::rotate( int x, int y, int sz, bool ccw )
+{
+	// square rotate
+	int xs = x, xe = x+sz-1;
+	int yc = sz/2;
+	char t;
+	
+	for( int yr = 0; yr < yc; yr++ ) {
+		for( int xr = xs; xr < xe; xr++ ) {
+			// calc corner addresses
+			char *ul = m_Data[y+yr] + xr*m_PixSize;
+			char *ur = m_Data[y+yr+xr-xs] + xe*m_PixSize;
+			char *dr = m_Data[y+yr+xe-xs] + (xe-xr+xs)*m_PixSize;
+			char *dl = m_Data[y+yr+xe-xr] + xs*m_PixSize;
+			if( ccw ) {
+				for( int i = 0; i<m_PixSize; i++ ) {
+					t = ul[i];
+					ul[i] = ur[i];
+					ur[i] = dr[i];
+					dr[i] = dl[i];
+					dl[i] = t;
+				}
+			} else {
+				for( int i = 0; i<m_PixSize; i++ ) {
+					t = ul[i];
+					ul[i] = dl[i];
+					dl[i] = dr[i];
+					dr[i] = ur[i];
+					ur[i] = t;
+				}
+			}
+		}
+		xs++; xe--;
+	}
+	
+}
 
 Brush *CanvasData::createBrushFromRect( int x, int y, int w, int h, int bg )
 {
