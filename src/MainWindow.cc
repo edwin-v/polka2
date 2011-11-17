@@ -8,7 +8,7 @@
 #include <gtkmm/spinbutton.h>
 #include <gtkmm/filechooserdialog.h>
 #include <gtkmm/messagedialog.h>
-#include <gtkmm/messagedialog.h>
+#include <gtkmm/aboutdialog.h>
 #include <iostream>
 #include <algorithm>
 #include <limits>
@@ -438,6 +438,17 @@ void MainWindow::onViewHistory()
 
 void MainWindow::onHelpAbout()
 {
+	Gtk::AboutDialog ad;
+	ad.set_program_name("Polka2");
+	ad.set_version("0.5.pre");
+	ad.set_copyright("Copyright (c) 2010-1011 by Infinite");
+	ad.set_comments(_("Polka2 is an environment for retro development."));
+	ad.set_license(_("This software is currently licensed under the 'do as Edwin says' license."));
+	ad.set_license_type(Gtk::LICENSE_CUSTOM);
+	ad.set_website("http://www.infinitemsx.com");
+	ad.set_website_label(_("Go to the Infinite website."));
+	ad.set_authors({_("Edwin")});
+	ad.run();
 }
 
 void MainWindow::onTreeActivate(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* /*column*/)
