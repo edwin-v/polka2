@@ -991,6 +991,7 @@ void Project::finishImportObjects()
 	Storage& us = m_pImportAction->setUndoData( ACTION_MULTIPLE );
 	// add locations to all objects
 	Storage& s = m_pImportAction->redoData();
+	std::vector<std::string> objs;
 	bool readObjs = s.findObject();
 	while( readObjs ) {
 		const std::string& objtype = s.objectType();
@@ -1007,14 +1008,20 @@ void Project::finishImportObjects()
 			// get object name
 			if( !objS.findItem("OBJECT_NAME") ) continue;
 
-			// delete object on undo
-			Storage& ds = us.createObject( ACTION_DELETE );
-			ds.createItem("DELETE_NAME", "S");
-			ds.setField( 0, objS.stringField(0) );
+			// store name for undo
+			objs.push_back( objS.stringField(0) );
 		}
 		
 		// next object
 		readObjs = s.findNextObject();		
+	}
+	// add delete actions for undo in reverse order
+	while( objs.size() ) {
+		// delete object on undo
+		Storage& ds = us.createObject( ACTION_DELETE );
+		ds.createItem("DELETE_NAME", "S");
+		ds.setField( 0, objs.back() );
+		objs.pop_back();
 	}
 	
 	// execute redo
