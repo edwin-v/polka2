@@ -106,8 +106,6 @@ void Palette::initColor( int nr, int r, int g, int b )
 int Palette::store( Storage& s )
 {
 	if( !m_SkipSave ) {
-		s.createItem("DEPTH", "I");
-		s.setField( 0, m_Depth );
 		storeColors( s );
 	}
 	return 0;
@@ -116,10 +114,6 @@ int Palette::store( Storage& s )
 int Palette::restore( Storage& s )
 {
 	if( !m_SkipSave ) {
-		if( !s.findItem("DEPTH") ) return Storage::EMISSINGDATAFATAL;
-		if( !s.checkFormat("I") ) return Storage::EINCORRECTDATATYPE;
-		m_Depth = s.integerField(0);
-		
 		return restoreColors(s);
 	}
 	return 0;
