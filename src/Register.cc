@@ -12,6 +12,7 @@
 #include "CanvasEditor.h"
 
 #include "BitmapScreenImport.h"
+#include "ImageImport.h"
 #include "RawImport.h"
 
 namespace Polka {
@@ -33,6 +34,7 @@ void registerObjects( ObjectManager& manager )
 void registerImporters( ImportManager& manager )
 {
 	manager.registerImporter( new BitmapScreenImporter() );
+	manager.registerImporter( new ImageImporter() );
 	manager.registerImporter( new RawImporter() );
 }
 

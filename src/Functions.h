@@ -25,5 +25,9 @@ void swap( T& v1, T& v2 ) {
 	v2 = t;	
 }
 
+template<typename T> 
+T sqr( T v ) {
+	return v*v;	
+}
 
 #endif
