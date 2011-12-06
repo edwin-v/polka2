@@ -179,8 +179,8 @@ void Brush::rotate( bool ccw )
 	}
 
 	delete [] dat;
-	swap( m_Width, m_Height );
-	swap( m_DX, m_DY );
+	std::swap( m_Width, m_Height );
+	std::swap( m_DX, m_DY );
 	m_refImage.clear();
 }
 

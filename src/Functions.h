@@ -18,14 +18,6 @@ bool checkObjectType( const std::string& type, const std::string& typespec );
 Glib::ustring getNameFromFilename( const Glib::ustring& filename );
 
 template<typename T> 
-void swap( T& v1, T& v2 ) {
-	T t;
-	t = v1;
-	v1 = v2;
-	v2 = t;	
-}
-
-template<typename T> 
 T sqr( T v ) {
 	return v*v;	
 }
