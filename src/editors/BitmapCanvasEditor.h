@@ -14,8 +14,15 @@
 
 namespace Polka {
 
-class ToolButtonWindow;
+// action/accelerator IDs continued from CanvasView 
+enum { ACC_ACTIVATE_PRI = 1, ACC_ACTIVATE_SEC, ACC_MOD_ACT_FLIP, ACC_SELECT, ACC_SELECT_TILE,
+       ACC_MOD_SELECT_TILE, ACC_MOD_SELECT_SQUARE, ACC_SELECT_FLOAT, ACC_COLORPICK_FG, ACC_COLORPICK_BG,
+       ACC_QUICKPICK_FG, ACC_QUICKPICK_BG, ACC_DRAW_FG, ACC_DRAW_BG, ACC_MOD_DRAW_COL,
+       ACC_LINE_FG, ACC_LINE_BG, ACC_MOD_LINE_ANGLE, ACC_FILL_FG, ACC_FILL_BG,
+       ACC_FLIP_HOR, ACC_FLIP_VER, ACC_ROTATE_CW, ACC_ROTATE_CCW };
 
+
+class ToolButtonWindow;
 
 class BitmapCanvasEditor : public CanvasView
 {
@@ -85,6 +92,7 @@ private:
 
 	// tool variables
 	int m_ToolMode;
+	bool m_TileSelect, m_UseFGColor;
 	int m_FGColor, m_BGColor;
 	Pen m_Pen;
 	int m_PenColor;
@@ -111,65 +119,65 @@ private:
 	
 	// tool handlers
 	void rectSelectInit();
-	bool rectSelectActivate( guint button, guint mods );
+	bool rectSelectActivate( guint button, guint key, guint mods );
 	bool rectSelectUpdate( guint mods );
-	bool rectSelectRelease( guint button );
+	bool rectSelectRelease( guint button, guint key );
 	void rectSelectClean();
 	void rectSelectModeChanged();
 	void rectSelectToBrush();
 
 	void eyeDropperInit();
-	bool eyeDropperActivate( guint button, guint mods );
+	bool eyeDropperActivate( guint button, guint key, guint mods );
 	bool eyeDropperUpdate( guint mods );
-	bool eyeDropperRelease( guint button );
+	bool eyeDropperRelease( guint button, guint key );
 	void eyeDropperClean();
 	
 	void penInit();
-	bool penActivate( guint button, guint mods );
+	bool penActivate( guint button, guint key, guint mods );
 	bool penUpdate( guint mods );
-	bool penRelease( guint button );
+	bool penRelease( guint button, guint key );
 	void penClean();
 	
 	void brushInit();
-	bool brushActivate( guint button, guint mods );
+	bool brushActivate( guint button, guint key, guint mods );
 	bool brushUpdate( guint mods );
-	bool brushRelease( guint button );
+	bool brushRelease( guint button, guint key );
 	void brushClean();
 	
 	void chgColorInit();
-	bool chgColorActivate( guint button, guint mods );
+	bool chgColorActivate( guint button, guint key, guint mods );
 	bool chgColorUpdate( guint mods );
-	bool chgColorRelease( guint button );
+	bool chgColorRelease( guint button, guint key );
 	void chgColorClean();
 
 	void lineInit();
-	bool lineActivate( guint button, guint mods );
+	bool lineActivate( guint button, guint key, guint mods );
 	bool lineUpdate( guint mods );
-	bool lineRelease( guint button, guint mods );
+	bool lineRelease( guint button, guint key, guint mods );
 	void lineClean();
 
 	void rectInit();
-	bool rectActivate( guint button, guint mods );
+	bool rectActivate( guint button, guint key, guint mods );
 	bool rectUpdate( guint mods );
-	bool rectRelease( guint button, guint mods );
+	bool rectRelease( guint button, guint key, guint mods );
 	void rectClean();
 
 	void fillInit();
-	bool fillActivate( guint button, guint mods );
+	bool fillActivate( guint button, guint key, guint mods );
 	//bool fillUpdate( guint mods );
-	//bool fillRelease( guint button );
+	//bool fillRelease( guint button, guint key );
 	//void fillClean();
 
 	void flipInit();
-	bool flipActivate( guint button, guint mods );
+	bool flipActivate( guint button, guint key, guint mods );
 	bool flipUpdate( guint mods );
-	//bool flipRelease( guint button );
+	//bool flipRelease( guint button, guint key );
 	void flipClean();
 
 	void rotateInit();
-	bool rotateActivate( guint button, guint mods );
+	bool rotateActivate( guint button, guint key, guint mods );
 	bool rotateUpdate( guint mods );
-	//bool rotateRelease( guint button );
+	//bool rotateRelease( guint button, guint key );
 	void rotateClean();
 
 };

@@ -173,7 +173,7 @@ void Project::init()
 	                      sigc::mem_fun(*this, &Project::onEdit));
 	m_refActionGroup->add(Gtk::Action::create("ContextCreateFolder", _("Create _Folder")),
 	                      sigc::mem_fun(*this, &Project::onCreateFolder));
-	ObjectManager& om = ObjectManager::instance();
+	ObjectManager& om = ObjectManager::get();
 	for( unsigned int i = 0; i < om.numObjectTypes(); i++ )
 		m_refActionGroup->add(Gtk::Action::create(
 				Glib::ustring("ContextCreateObject") + om.objectId(i),
@@ -213,14 +213,14 @@ void Project::init()
 	topRow[m_Cols.m_pObject] = 0;
 
 	// Fill the TreeView's model with existing containers
-	const std::map<std::string, Glib::ustring>& containers = ObjectManager::instance().containers();
+	const std::map<std::string, Glib::ustring>& containers = ObjectManager::get().containers();
 	std::map<std::string, Glib::ustring>::const_iterator it = containers.begin();
 	while( it != containers.end() ) {
 		Gtk::TreeModel::Row row = *(m_rpTreeModel->append(topRow.children()));
 		row[m_Cols.m_Name] = it->second;
 		row[m_Cols.m_pObject] = 0;
 		row[m_Cols.m_BaseLocation] = it->first;
-		row[m_Cols.m_rpIcon] = ObjectManager::instance().locationIcon( it->first );
+		row[m_Cols.m_rpIcon] = ObjectManager::get().locationIcon( it->first );
 		it++;
 	}
 	
@@ -296,7 +296,7 @@ void Project::onSelectionChanged()
 			// row is an object
 			cut = copy = rename = props = true;
 			Polka::Object *obj = row[m_Cols.m_pObject];
-			const std::string& editId = ObjectManager::instance().getObjectEditorId( obj->id() );
+			const std::string& editId = ObjectManager::get().getObjectEditorId( obj->id() );
 			edit = !editId.empty();
 			// delete if nothing depends on it
 			if( obj->canRemove() )
@@ -314,7 +314,7 @@ void Project::onSelectionChanged()
 			if( row.children().size() == 0 ) 
 				if( (*row.parent()).parent() ) del = true;
 			// add objects allowed in this location
-			ObjectManager& om = ObjectManager::instance();
+			ObjectManager& om = ObjectManager::get();
 			const std::string& locId = row[m_Cols.m_BaseLocation];
 			for( unsigned int i = 0; i < om.numObjectTypes(); i++ )
 				if( om.objectLocationId(i) == locId )
@@ -423,7 +423,7 @@ int Project::loadFromFile( const std::string& filename )
 	if( !s.checkFormat("S") ) return 1;
 	m_ProjectName.assign( s.stringField(0) );
 	
-	ObjectManager& om = ObjectManager::instance();
+	ObjectManager& om = ObjectManager::get();
  std::cout << "obj" << std::endl;
 	
 	// edited object list
@@ -614,7 +614,7 @@ void Project::onEdit()
 		Gtk::TreeModel::Row row = *rit;
 		Polka::Object *obj = (Polka::Object*)row[m_Cols.m_pObject];
 		if( !obj ) return;
-		Editor *objEdt = ObjectManager::instance().getObjectEditor( obj->id() );
+		Editor *objEdt = ObjectManager::get().getObjectEditor( obj->id() );
 		if( !objEdt ) return;
 		objEdt->setObject(obj);
 		m_SignalEditObject.emit( objEdt );
@@ -627,7 +627,7 @@ Polka::Object *Project::editObject( const Glib::ustring& name )
 
 	Polka::Object *obj = findObject( name );
 	if( obj ) {
-		Editor *objEdt = ObjectManager::instance().getObjectEditor( obj->id() );
+		Editor *objEdt = ObjectManager::get().getObjectEditor( obj->id() );
 		if( objEdt ) {
 			objEdt->setObject(obj);
 			m_SignalEditObject.emit( objEdt );
@@ -685,7 +685,7 @@ void Project::onCreateObject()
 	Gtk::TreeModel::iterator rit = get_selection()->get_selected();
 	
 	if( rit ) {
-		ObjectManager& om = ObjectManager::instance();
+		ObjectManager& om = ObjectManager::get();
 		// create object of type "name"
 		Glib::ustring typeName = om.nameFromId( name );
 		Gtk::TreeModel::iterator newIt = createObject( rit, createUniqueName( typeName ), name );
@@ -746,7 +746,7 @@ Gtk::TreeModel::Row Project::createLocation( const std::vector<Glib::ustring>& p
 				row[m_Cols.m_Name] = path[i];
 				row[m_Cols.m_pObject] = 0;
 				row[m_Cols.m_BaseLocation] = baseType;
-				row[m_Cols.m_rpIcon] = ObjectManager::instance().subLocationIcon( baseType );
+				row[m_Cols.m_rpIcon] = ObjectManager::get().subLocationIcon( baseType );
 				i++;
 			}
 			break;
@@ -864,7 +864,7 @@ Gtk::TreeNodeChildren::iterator Project::findLocation( const Glib::ustring& name
 
 Gtk::TreeNodeChildren::iterator Project::findBaseLocation( const std::string& type )
 {
-	const std::string& baseid = ObjectManager::instance().objectLocationId(type);
+	const std::string& baseid = ObjectManager::get().objectLocationId(type);
 	
 	// start with children of base item (= project name)
 	const Gtk::TreeNodeChildren& items = m_rpTreeModel->children()[0].children();
@@ -925,7 +925,7 @@ void Project::findAllObjectsOfType( const std::string& id,
 
 bool Project::checkObjectRequirements( const std::string& id )
 {
-	return ObjectManager::instance().canCreateObject( id, *this );
+	return ObjectManager::get().canCreateObject( id, *this );
 }
 
 void Project::renameLocation( const Glib::ustring& from, const Glib::ustring& to )
@@ -960,7 +960,7 @@ Gtk::TreeModel::iterator Project::createFolder( Gtk::TreeModel::iterator locatio
 	newRow[m_Cols.m_Name] = name;
 	newRow[m_Cols.m_pObject] = 0;
 	newRow[m_Cols.m_BaseLocation] = Glib::ustring(row[m_Cols.m_BaseLocation]);
-	newRow[m_Cols.m_rpIcon] = ObjectManager::instance().subLocationIcon( newRow[m_Cols.m_BaseLocation] );
+	newRow[m_Cols.m_rpIcon] = ObjectManager::get().subLocationIcon( newRow[m_Cols.m_BaseLocation] );
 	// signal update to tree
 	m_SignalTreeUpdate.emit();
 	
@@ -998,7 +998,7 @@ void Project::finishImportObjects()
 		Storage& objS = s.object();
 		
 		// default location	
-		Glib::ustring loc = ObjectManager::instance().objectLocation( objtype );
+		Glib::ustring loc = ObjectManager::get().objectLocation( objtype );
 		
 		if( !loc.empty() ) {
 			// real object, add location
@@ -1064,7 +1064,7 @@ Gtk::TreeModel::iterator Project::createObject( const Glib::ustring& location, c
 
 Gtk::TreeModel::iterator Project::createObject( Gtk::TreeModel::iterator location, const Glib::ustring& name, const std::string& type )
 {
-	ObjectManager& om = ObjectManager::instance();
+	ObjectManager& om = ObjectManager::get();
 	// create object
 	Polka::Object *newObj = om.createObject( *this, type );
 	m_Objects.push_back( newObj );

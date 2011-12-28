@@ -10,10 +10,8 @@ namespace Polka {
 
 class Object;
 
-// convenience modifier
-const Gdk::ModifierType ALT_MASK = Gdk::MOD1_MASK;
 
-class Editor : public Gtk::VBox 
+class Editor : public Gtk::VBox
 {
 public:
 	Editor( const std::string& _id );

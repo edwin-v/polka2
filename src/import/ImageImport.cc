@@ -247,7 +247,7 @@ ImageImporter::ImagePreviewWidget::ImagePreviewWidget( ImageImporter& importer )
 	// init combos
 	std::vector<std::string> vec;
 	// palettes
-	ObjectManager& om = ObjectManager::instance();
+	ObjectManager& om = ObjectManager::get();
 	ColorReducer c;//TEMP
 	c.getTargetPalettes( vec );
 	for( unsigned int i = 0; i < vec.size(); i++ )

@@ -118,7 +118,7 @@ ObjectManager::~ObjectManager()
 {
 }
 
-ObjectManager& ObjectManager::instance()
+ObjectManager& ObjectManager::get()
 {
 	static ObjectManager om;
 	

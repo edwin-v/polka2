@@ -21,7 +21,7 @@ class ObjectPropertySheet;
 class ObjectManager
 {
 public:
-	static ObjectManager& instance();
+	static ObjectManager& get();
 
 	// ***************************
 	//  object factory base class

@@ -16,7 +16,7 @@ TileCanvas::TileCanvas()
 	assert( (m_Image->get_stride() & 3)==0 );
 
 	// select initial palette from available MSX1 and MSX2 palettes
-	ObjectManager& om = ObjectManager::instance();
+	ObjectManager& om = ObjectManager::get();
 	Object *obj = om.findObjectOfType( "PAL2" );
 	if( !obj ) obj = om.findObjectOfType( "PAL1" );
 	assert(obj); // should exist

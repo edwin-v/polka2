@@ -106,7 +106,7 @@ void Editor::updateTitle()
 
 Glib::ustring Editor::title() const
 {
-	Glib::ustring title = ObjectManager::instance().editorNameFromId( m_Id );
+	Glib::ustring title = ObjectManager::get().editorNameFromId( m_Id );
 	// add object name
 	if( m_pObject ) {
 		title += " - ";

@@ -5,15 +5,10 @@
 using namespace std;
 namespace Polka {
 
-enum { ACC_PAN = 0 };
-
 CanvasView::CanvasView( const std::string& _id )
 	: AccelBase(_id), m_Dragging(false), m_ViewLocked(false)
 {
 	add_events(Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::BUTTON2_MOTION_MASK | Gdk::SCROLL_MASK);
-
-	// add accels
-	accAdd( ACC_PAN, "pan", 2 );
 
 	// add pixel grid
 	m_Overlay.add( 0, new OverlayGrid( 1, 1 ) );
@@ -178,7 +173,7 @@ bool CanvasView::on_button_press_event(GdkEventButton *event)
 
 	// handle middle button drag start
 	if( !m_Dragging ) {
-		if( checkAccButton( ACC_PAN, event->button, event->state)) {
+		if( isAccel( ACC_PAN, event->button, 0, event->state)) {
 			m_Dragging = true;
 			m_DragFromX = event->x;
 			m_DragFromY = event->y;
@@ -215,7 +210,7 @@ bool CanvasView::on_button_release_event(GdkEventButton *event)
 	if( m_ViewLocked ) return false;
 
 	// handle middle button drag end
-	if( m_Dragging && checkAccButton( ACC_PAN, event->button, event->state) ) {
+	if( m_Dragging && isAccel( ACC_PAN, event->button, 0, event->state) ) {
 		queue_draw();
 		m_Dragging = false;
 		restoreCursor();

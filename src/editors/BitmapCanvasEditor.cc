@@ -68,10 +68,6 @@ enum { SELECT_MODE_NONE, SELECT_MODE_MOVE, SELECT_MODE_SCALEUP,
 
 enum { FLIP_MODE_NONE, FLIP_MODE_FLOAT, FLIP_MODE_SELECT, FLIP_MODE_ALL };
 
-enum { ACC_ACTIVATE = 1, ACC_SELECT_TILE, ACC_SELECT_FLOAT,
-       ACC_COLORPICK_FG, ACC_COLORPICK_BG, ACC_COLORPICK_QUICK, ACC_MOD_SEC,
-       ACC_MOD_SQUARE };
-
 
 BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	: CanvasView(_id),
@@ -81,16 +77,6 @@ BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	add_events(Gdk::POINTER_MOTION_MASK | Gdk::KEY_PRESS_MASK);
 	
 	set_can_focus(true);
-
-	// add accelerators
-	accAdd( ACC_ACTIVATE          , "activate"         , 1 );
-	accAdd( ACC_SELECT_TILE       , "select/tile"      , 0, 0, MOD_CTRL );
-	accAdd( ACC_SELECT_FLOAT      , "select/floating"  , 1 + DBL_CLICK );
-	accAdd( ACC_COLORPICK_FG      , "colorpick/fg"     , 1 );
-	accAdd( ACC_COLORPICK_BG      , "colorpick/bg"     , 3 );
-	accAdd( ACC_COLORPICK_QUICK   , "colorpick/quick"  , 3 );
-	accAdd( ACC_MOD_SEC           , "secondary"        , 0, 0, MOD_CTRL );
-	accAdd( ACC_MOD_SQUARE        , "square"           , 0, 0, MOD_SHIFT );
 
 	m_pBrush = 0;
 	m_pTempBrush = 0;
@@ -385,37 +371,37 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 	updateCoords( event->x, event->y );
 	// activate tool
 	bool res = false;
-	int but = accEventButton(event);
+	int but = accelEventButton(event);
 	switch( m_CurrentTool ) {
 		case TOOL_SELECT:
-			res = rectSelectActivate(but, event->state);
+			res = rectSelectActivate(but, 0, event->state);
 			break;
 		case TOOL_EYEDROPPER:
-			res = eyeDropperActivate(but, event->state);
+			res = eyeDropperActivate(but, 0, event->state);
 			break;
 		case TOOL_PEN:
-			res = penActivate(but, event->state);
+			res = penActivate(but, 0, event->state);
 			break;
 		case TOOL_BRUSH:
-			res = brushActivate(but, event->state);
+			res = brushActivate(but, 0, event->state);
 			break;
 		case TOOL_CHANGECOLOR:
-			res = chgColorActivate(but, event->state);
+			res = chgColorActivate(but, 0, event->state);
 			break;
 		case TOOL_LINE:
-			res = lineActivate(but, event->state);
+			res = lineActivate(but, 0, event->state);
 			break;
 		case TOOL_RECT:
-			res = rectActivate(but, event->state);
+			res = rectActivate(but, 0, event->state);
 			break;
 		case TOOL_FILL:
-			res = fillActivate(but, event->state);
+			res = fillActivate(but, 0, event->state);
 			break;
 		case TOOL_FLIP:
-			res = flipActivate(but, event->state);
+			res = flipActivate(but, 0, event->state);
 			break;
 		case TOOL_ROTATE:
-			res = rotateActivate(but, event->state);
+			res = rotateActivate(but, 0, event->state);
 			break;
 		default:
 			break;
@@ -425,7 +411,7 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 	if( res ) return true;
 	
 	// no tool used, secondary functions
-	if( checkAccButton( ACC_COLORPICK_QUICK, but, event->state ) ) {
+	if( isAccel( ACC_QUICKPICK_FG, but, 0, event->state ) ) {
 		// quick colorpick, temp store current
 		bool temp = m_DragPrimary;
 		Glib::RefPtr<Gdk::Cursor> tempCursor = m_refToolCursor;
@@ -491,25 +477,25 @@ bool BitmapCanvasEditor::on_button_release_event(GdkEventButton *event)
 	bool res = false;
 	switch( m_CurrentTool ) {
 		case TOOL_SELECT:
-			res = rectSelectRelease( event->button );
+			res = rectSelectRelease( event->button, 0 );
 			break;
 		case TOOL_EYEDROPPER:
-			res = eyeDropperRelease( event->button );
+			res = eyeDropperRelease( event->button, 0 );
 			break;
 		case TOOL_PEN:
-			res = penRelease( event->button );
+			res = penRelease( event->button, 0 );
 			break;
 		case TOOL_BRUSH:
-			res = brushRelease( event->button );
+			res = brushRelease( event->button, 0 );
 			break;
 		case TOOL_CHANGECOLOR:
-			res = chgColorRelease( event->button );
+			res = chgColorRelease( event->button, 0 );
 			break;
 		case TOOL_LINE:
-			res = lineRelease( event->button, event->state );
+			res = lineRelease( event->button, 0, event->state );
 			break;
 		case TOOL_RECT:
-			res = rectRelease( event->button, event->state );
+			res = rectRelease( event->button, 0, event->state );
 			break;
 		default:
 			break;
@@ -711,9 +697,10 @@ void BitmapCanvasEditor::rectSelectInit()
  * Start dragging a rectangle or rectangle modification. When inside
  * a selection, a selection can be made floating.
  */
-bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
+bool BitmapCanvasEditor::rectSelectActivate( guint button, guint key, guint mods )
 {
-	if( m_ToolMode == SELECT_MODE_MOVE && checkAccButton( ACC_SELECT_FLOAT, button, mods ) ) {
+	int f;
+	if( m_ToolMode == SELECT_MODE_MOVE && isAccel( ACC_SELECT_FLOAT, button, key, mods ) ) {
 		// change to floating selection
 		// create new brush from selection
 		if( m_pSelectionBrush ) delete m_pSelectionBrush;
@@ -743,7 +730,9 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 		m_Overlay.shape(10).setVisible(false);
 		m_Overlay.shape(10).setSize(0,0);
 		
-	} else if( checkAccButton(ACC_ACTIVATE, button) ) {
+	} else if( (f = isAccel( {ACC_SELECT, ACC_SELECT_TILE}, button, key, mods)) >= 0 ) {
+		
+		m_TileSelect = f == ACC_SELECT_TILE;
 		
 		if( m_ToolMode == SELECT_MODE_APPLYFLOATING ) {
 
@@ -770,7 +759,7 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint mods )
 			setFastUpdate();
 			queue_draw();
 			
-			if( checkAccMods(ACC_SELECT_TILE, mods) && updateTileCoords() ) {
+			if( m_TileSelect && updateTileCoords() ) {
 				// select initial tile
 				if( m_InFullTile ) 
 					rectSelectUpdate( mods );
@@ -789,8 +778,11 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 	OverlayRectangle& shape = dynamic_cast<OverlayRectangle&>(m_Overlay.shape(10));
 
 	if( m_DragPrimary ) {
+		// check for flip function
+		bool flip = isAccelMod( ACC_MOD_SELECT_TILE, mods );
+
 		// select whole tiles?
-		bool modTile = m_ZoomMode ? false : checkAccMods(ACC_SELECT_TILE, mods);
+		bool modTile = m_ZoomMode ? false : m_TileSelect^flip;
 
 		if( m_ToolMode == SELECT_MODE_NONE ) {
 			int x1, x2, y1, y2;
@@ -1032,9 +1024,9 @@ bool BitmapCanvasEditor::rectSelectUpdate( guint mods )
 /**
  * End dragging of selection rectangle
  */
-bool BitmapCanvasEditor::rectSelectRelease( guint button )
+bool BitmapCanvasEditor::rectSelectRelease( guint button, guint key )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) ) {
+	if( isAccel( {ACC_SELECT, ACC_SELECT_TILE}, button, key) >= 0 ) {
 		// restore slow drawing features
 		setFastUpdate(false);
 		m_DragPrimary = false;
@@ -1103,15 +1095,15 @@ void BitmapCanvasEditor::eyeDropperInit()
 	m_PickFG = true;
 }
 
-bool BitmapCanvasEditor::eyeDropperActivate( guint button, guint mods )
+bool BitmapCanvasEditor::eyeDropperActivate( guint button, guint key, guint mods )
 {
 	if( m_MouseInArea && !m_DragPrimary ) {
 		// pick under mouse
-		if( checkAccButton(ACC_COLORPICK_FG, button, mods) ) {
+		if( isAccel(ACC_COLORPICK_FG, button, key, mods) ) {
 			m_DragPrimary = true;
 			m_PickFG = true;
 			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_fg") );
-		} else if( checkAccButton(ACC_COLORPICK_BG, button, mods) ) {
+		} else if( isAccel(ACC_COLORPICK_BG, button, key, mods) ) {
 			m_DragPrimary = true;
 			m_PickFG = false;
 			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_eyedropper_bg") );
@@ -1137,10 +1129,10 @@ bool BitmapCanvasEditor::eyeDropperUpdate( guint mods )
 	return false;
 }
 
-bool BitmapCanvasEditor::eyeDropperRelease( guint button )
+bool BitmapCanvasEditor::eyeDropperRelease( guint button, guint key )
 {
-	if( ( m_PickFG && checkAccButton( ACC_COLORPICK_FG, button )) ||
-		(!m_PickFG && checkAccButton( ACC_COLORPICK_BG, button )) )
+	if( ( m_PickFG && isAccel( ACC_COLORPICK_FG, button, key )) ||
+		(!m_PickFG && isAccel( ACC_COLORPICK_BG, button, key )) )
 	{
 		m_DragPrimary = false;
 		return true;
@@ -1170,12 +1162,14 @@ void BitmapCanvasEditor::penInit()
 /**
  * Start drawing, intialize pen color and undo action
  */
-bool BitmapCanvasEditor::penActivate( guint button, guint mods )
+bool BitmapCanvasEditor::penActivate( guint button, guint key, guint mods )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) && m_MouseInArea ) {
+	int f = isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key, mods);
+	if( f>=0 && m_MouseInArea ) {
 
 		// initial draw, reset color
 		m_PenColor = -1;
+		m_UseFGColor = f == ACC_DRAW_FG;
 		// start action
 		canvas().startAction( _("Draw pencil"), ResourceManager::get().getIcon("canvasedit_tool_draw") );
 		m_DragPrimary = true;
@@ -1197,16 +1191,18 @@ bool BitmapCanvasEditor::penActivate( guint button, guint mods )
 bool BitmapCanvasEditor::penUpdate( guint mods )
 {
 	if( m_DragPrimary ) {
+		// flip color
+		m_UseFGColor = updateAccel( ACC_DRAW_FG, ACC_DRAW_BG, m_UseFGColor, mods, ACC_MOD_DRAW_COL );
 		// color changed?
-		if( checkAccMods(ACC_MOD_SEC, mods) ) {
-			if( m_PenColor != m_BGColor ) {
-				m_PenColor = m_BGColor;
-				m_Pen.setColor( m_BGColor );
-			}				
-		} else {
+		if( m_UseFGColor ) {
 			if( m_PenColor != m_FGColor ) {
 				m_PenColor = m_FGColor;
 				m_Pen.setColor( m_FGColor );
+			}				
+		} else {
+			if( m_PenColor != m_BGColor ) {
+				m_PenColor = m_BGColor;
+				m_Pen.setColor( m_BGColor );
 			}				
 		}
 		// draw
@@ -1226,9 +1222,9 @@ bool BitmapCanvasEditor::penUpdate( guint mods )
 /**
  * Release pen activation and finalize undo action
  */
-bool BitmapCanvasEditor::penRelease( guint button )
+bool BitmapCanvasEditor::penRelease( guint button, guint key )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) ) {
+	if( isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) ) {
 		canvas().finishAction();
 		m_DragPrimary = false;
 		return true;
@@ -1267,12 +1263,14 @@ void BitmapCanvasEditor::brushInit()
 /**
  * Start drawing, intialize brush color and undo action
  */
-bool BitmapCanvasEditor::brushActivate( guint button, guint mods )
+bool BitmapCanvasEditor::brushActivate( guint button, guint key, guint mods )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) && m_MouseInArea ) {
+	int f = isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key, mods);
+	if( f>=0 && m_MouseInArea ) {
 
 		// initial draw, reset color
 		m_PenColor = -1;
+		m_UseFGColor = f == ACC_DRAW_FG;
 		// start action
 		canvas().startAction( _("Draw brush"), ResourceManager::get().getIcon("canvasedit_tool_brush") );
 		m_DragPrimary = true;
@@ -1295,16 +1293,27 @@ bool BitmapCanvasEditor::brushUpdate( guint mods )
 	                               m_BrushMarker.y() - m_pBrush->offsetY(),
 	                               m_pBrush->width(),
 	                               m_pBrush->height() ) );
-	// always update brush color
-	if( checkAccMods(ACC_MOD_SEC, mods) ) {
-		if( m_PenColor != m_BGColor ) {
-			m_PenColor = m_BGColor;
-			m_pBrush->setColor( m_BGColor );
-		}				
+
+	// determine brush color
+	bool fg = true;
+	if( m_DragPrimary ) {
+		// switch is necessary
+		fg = updateAccel( ACC_DRAW_FG, ACC_DRAW_BG, m_UseFGColor, mods, ACC_MOD_DRAW_COL );
 	} else {
+		// check if mods determine color
+		fg = guessAccel( ACC_DRAW_FG, ACC_DRAW_BG, mods, ACC_MOD_DRAW_COL );
+	}
+
+	// always update brush color
+	if( fg ) {
 		if( m_PenColor != m_FGColor ) {
 			m_PenColor = m_FGColor;
 			m_pBrush->setColor( m_FGColor );
+		}				
+	} else {
+		if( m_PenColor != m_BGColor ) {
+			m_PenColor = m_BGColor;
+			m_pBrush->setColor( m_BGColor );
 		}				
 	}
 	
@@ -1327,9 +1336,9 @@ bool BitmapCanvasEditor::brushUpdate( guint mods )
 /**
  * Release brush activation and finalize undo action
  */
-bool BitmapCanvasEditor::brushRelease( guint button )
+bool BitmapCanvasEditor::brushRelease( guint button, guint key )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) ) {
+	if( isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) ) {
 		canvas().finishAction();
 		m_DragPrimary = false;
 		return true;
@@ -1367,17 +1376,22 @@ void BitmapCanvasEditor::chgColorInit()
 	// default brush
 	if( !m_pBrush )
 		m_pBrush = m_Brushes[0];
+	// show marker
+	m_BrushMarker.setLocation( m_PixX, m_PixY );
+	m_BrushMarker.setVisible();
 }
 
 /**
  * Start drawing, intialize brush color and undo action
  */
-bool BitmapCanvasEditor::chgColorActivate( guint button, guint mods )
+bool BitmapCanvasEditor::chgColorActivate( guint button, guint key, guint mods )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) && m_MouseInArea ) {
+	int f = isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key, mods);
+	if( f>=0 && m_MouseInArea ) {
 
 		// initial draw, reset color
 		m_PenColor = -1;
+		m_UseFGColor = f == ACC_DRAW_FG;
 		// start action
 		canvas().startAction( _("Change color"), ResourceManager::get().getIcon("canvasedit_tool_changecolor") );
 		m_DragPrimary = true;
@@ -1395,32 +1409,57 @@ bool BitmapCanvasEditor::chgColorActivate( guint button, guint mods )
  */
 bool BitmapCanvasEditor::chgColorUpdate( guint mods )
 {
+	// update around current marker
+	canvasChanged( Gdk::Rectangle( m_BrushMarker.x() - m_pBrush->offsetX(),
+	                               m_BrushMarker.y() - m_pBrush->offsetY(),
+	                               m_pBrush->width(),
+	                               m_pBrush->height() ) );
+
+	// determine brush color
+	bool fg = true;
 	if( m_DragPrimary ) {
-		// color changed?
-		if( checkAccMods(ACC_MOD_SEC, mods) ) {
-			if( m_PenColor != m_BGColor ) {
-				m_PenColor = m_BGColor;
-				m_pBrush->setColor( m_BGColor );
-			}				
-		} else {
-			if( m_PenColor != m_FGColor ) {
-				m_PenColor = m_FGColor;
-				m_pBrush->setColor( m_FGColor );
-			}				
-		}
+		// switch is necessary
+		fg = updateAccel( ACC_DRAW_FG, ACC_DRAW_BG, m_UseFGColor, mods, ACC_MOD_DRAW_COL );
+	} else {
+		// check if mods determine color
+		fg = guessAccel( ACC_DRAW_FG, ACC_DRAW_BG, mods, ACC_MOD_DRAW_COL );
+	}
+
+	// always update brush color
+	if( fg ) {
+		if( m_PenColor != m_FGColor ) {
+			m_PenColor = m_FGColor;
+			m_pBrush->setColor( m_FGColor );
+		}				
+	} else {
+		if( m_PenColor != m_BGColor ) {
+			m_PenColor = m_BGColor;
+			m_pBrush->setColor( m_BGColor );
+		}				
+	}
+
+	if( m_DragPrimary ) {
 		// draw
 		canvas().changeColorDraw( m_PixX, m_PixY, *m_pBrush, m_PenColor==m_FGColor?m_BGColor:m_FGColor );
 		return true;
+	} else {
+		m_BrushMarker.setLocation( m_PixX, m_PixY );
+		// update around new marker
+		canvasChanged( Gdk::Rectangle( m_PixX - m_pBrush->offsetX(),
+		                               m_PixY - m_pBrush->offsetY(),
+		                               m_pBrush->width(),
+		                               m_pBrush->height() ) );
 	}
+
 	return false;
 }
 
 /**
  * Release brush activation and finalize undo action
  */
-bool BitmapCanvasEditor::chgColorRelease( guint button )
+bool BitmapCanvasEditor::chgColorRelease( guint button, guint key )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) ) {
+	if( isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) ) {
 		canvas().finishAction();
 		m_DragPrimary = false;
 		return true;
@@ -1433,6 +1472,13 @@ bool BitmapCanvasEditor::chgColorRelease( guint button )
  */
 void BitmapCanvasEditor::chgColorClean()
 {
+	if( m_pBrush && m_BrushMarker.isVisible() ) {
+		m_BrushMarker.setVisible(false);
+		canvasChanged( Gdk::Rectangle( m_PixX - m_pBrush->offsetX(),
+		                               m_PixY - m_pBrush->offsetY(),
+		                               m_pBrush->width(),
+		                               m_pBrush->height() ) );
+	}
 }
 
 
@@ -1453,9 +1499,9 @@ void BitmapCanvasEditor::lineInit()
 /**
  * Start drawing, intialize pen color and undo action
  */
-bool BitmapCanvasEditor::lineActivate( guint button, guint mods )
+bool BitmapCanvasEditor::lineActivate( guint button, guint key, guint mods )
 {
-	if( checkAccButton( ACC_ACTIVATE, button, mods ) ) {
+	if( isAccel( {ACC_LINE_FG, ACC_LINE_BG}, button, key, mods ) >= 0 ) {
 		// only start if primary button not previously pressed
 		if( !m_DragPrimary ) {
 			// only mark start
@@ -1485,7 +1531,7 @@ bool BitmapCanvasEditor::lineUpdate( guint mods )
 		int dx = m_DragEndX - m_DragStartX, dy = m_DragEndY - m_DragStartY;
 		if( dx && dy ) {
 			int sx = dx>0?1:-1, sy = dy>0?1:-1;
-			if( checkAccMods( ACC_MOD_SQUARE, mods ) ) {
+			if( isAccelMod( ACC_MOD_LINE_ANGLE, mods ) ) {
 				// modify directions
 				if( abs(dx) > abs(dy) ) {
 					int f = round( double(dx + sx) / (dy + sy) );
@@ -1525,15 +1571,16 @@ bool BitmapCanvasEditor::lineUpdate( guint mods )
  * Release and draw line or do nothing if still on start pixel and draw
  * on second click.
  */
-bool BitmapCanvasEditor::lineRelease( guint button, guint mods )
+bool BitmapCanvasEditor::lineRelease( guint button, guint key, guint mods )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) ) {
+	int f = isAccel( {ACC_LINE_FG, ACC_LINE_BG}, button, key, mods);
+	if( f >= 0 ) {
 		// if on same pixel, allow release
 		if( m_PixX == m_DragStartX && m_PixY == m_DragStartY ) {
 			return true;
 		}
 		// set pen color
-		if( checkAccMods( ACC_MOD_SEC, mods ) )
+		if( f == ACC_LINE_BG )
 			m_Pen.setColor( m_BGColor );
 		else
 			m_Pen.setColor( m_FGColor );
@@ -1581,9 +1628,9 @@ void BitmapCanvasEditor::rectInit()
 /**
  * Start drawing, intialize pen color and undo action
  */
-bool BitmapCanvasEditor::rectActivate( guint button, guint mods )
+bool BitmapCanvasEditor::rectActivate( guint button, guint key, guint mods )
 {
-	if( checkAccButton( ACC_ACTIVATE, button, mods ) ) {
+	if( isAccel( {ACC_LINE_FG, ACC_LINE_BG}, button, key, mods ) >= 0 ) {
 		// only start if primary button not previously pressed
 		if( !m_DragPrimary ) {
 			// only mark start
@@ -1614,7 +1661,7 @@ bool BitmapCanvasEditor::rectUpdate( guint mods )
 		int dx = m_DragEndX - m_DragStartX, dy = m_DragEndY - m_DragStartY;
 		if( dx && dy ) {
 			int sx = dx>0?1:-1, sy = dy>0?1:-1;
-			if( checkAccMods( ACC_MOD_SQUARE, mods ) ) {
+			if( isAccelMod( ACC_MOD_LINE_ANGLE, mods ) ) {
 				// modify to square
 				if( abs(dx) > abs(dy) ) {
 					m_DragEndX = m_DragStartX + sx*abs(dy);
@@ -1638,16 +1685,17 @@ bool BitmapCanvasEditor::rectUpdate( guint mods )
  * Release and draw rectangle or do nothing if still on start pixel and 
  * draw on second click.
  */
-bool BitmapCanvasEditor::rectRelease( guint button, guint mods )
+bool BitmapCanvasEditor::rectRelease( guint button, guint key, guint mods )
 {
-	if( checkAccButton(ACC_ACTIVATE, button) ) {
+	int f = isAccel( {ACC_LINE_FG, ACC_LINE_BG}, button, key, mods);
+	if( f >= 0 ) {
 		// if on same pixel, allow release
 		if( m_PixX == m_DragStartX && m_PixY == m_DragStartY ) {
 			return true;
 		}
 		// set pen colors
 		Pen fillPen;
-		if( checkAccMods( ACC_MOD_SEC, mods ) ) {
+		if( f == ACC_LINE_BG ) {
 			m_Pen.setColor( m_BGColor );
 			fillPen.setColor( m_FGColor );
 		} else {
@@ -1697,12 +1745,13 @@ void BitmapCanvasEditor::fillInit()
 /**
  * Fill at cursor, color determined by modifier
  */
-bool BitmapCanvasEditor::fillActivate( guint button, guint mods )
+bool BitmapCanvasEditor::fillActivate( guint button, guint key, guint mods )
 {
-	if( checkAccButton( ACC_ACTIVATE, button, mods ) ) {
+	int f = isAccel( {ACC_FILL_FG, ACC_FILL_BG}, button, key, mods);
+	if( f >= 0 ) {
 		// only start if primary button not previously pressed
 		if( m_MouseInArea ) {
-			if( checkAccMods( ACC_MOD_SEC, mods ) )
+			if( f == ACC_FILL_BG )
 				m_Pen.setColor( m_BGColor );
 			else
 				m_Pen.setColor( m_FGColor );
@@ -1732,10 +1781,11 @@ void BitmapCanvasEditor::flipInit()
 	m_ToolMode = FLIP_MODE_NONE;
 }
 
-bool BitmapCanvasEditor::flipActivate( guint button, guint mods )
+bool BitmapCanvasEditor::flipActivate( guint button, guint key, guint mods )
 {
-	if( m_ToolMode != FLIP_MODE_NONE && checkAccButton( ACC_ACTIVATE, button, mods ) ) {
-		bool sec = checkAccMods( ACC_MOD_SEC, mods );
+	int f = isAccel( {ACC_FLIP_HOR, ACC_FLIP_VER}, button, key, mods);
+	if( m_ToolMode != FLIP_MODE_NONE && f >= 0 ) {
+		bool sec = f == ACC_FLIP_VER;
 		if( m_ToolMode == FLIP_MODE_FLOAT ) {
 			// flip floating selection
 			m_pSelectionBrush->flip( sec );
@@ -1784,17 +1834,17 @@ bool BitmapCanvasEditor::flipUpdate( guint mods )
 	bool in_selection = m_MouseX >= x1 && m_MouseX <= x2 &&
 	                    m_MouseY >= y1 && m_MouseY <= y2;
 	if( !in_selection) m_ToolMode = FLIP_MODE_ALL;
-	
-	if( checkAccMods( ACC_MOD_SEC, mods ) ) {
-		if( in_selection )
-			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_verselflip") );
-		else
-			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_verflip") );
-	} else {
+
+	if( guessAccel( ACC_FLIP_HOR, ACC_FLIP_VER, mods ) ) {
 		if( in_selection )
 			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_horselflip") );
 		else
 			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_horflip") );
+	} else {
+		if( in_selection )
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_verselflip") );
+		else
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_verflip") );
 	}
 	return false;
 }
@@ -1826,10 +1876,11 @@ void BitmapCanvasEditor::rotateInit()
 	m_ToolMode = FLIP_MODE_NONE;
 }	
 
-bool BitmapCanvasEditor::rotateActivate( guint button, guint mods )
+bool BitmapCanvasEditor::rotateActivate( guint button, guint key, guint mods )
 {
-	if( checkAccButton( ACC_ACTIVATE, button, mods ) ) {
-		bool sec = checkAccMods( ACC_MOD_SEC, mods );
+	int f = isAccel( {ACC_ROTATE_CW, ACC_ROTATE_CCW}, button, key, mods);
+	if( f >= 0 ) {
+		bool sec = f == ACC_ROTATE_CCW;
 		if( m_ToolMode == FLIP_MODE_FLOAT ) {
 			// redraw current
 			canvasChanged( Gdk::Rectangle(m_SelectionMarker.x()-m_pSelectionBrush->offsetX()-2,
@@ -1878,10 +1929,11 @@ bool BitmapCanvasEditor::rotateUpdate( guint mods )
 	                    m_MouseY >= y1 && m_MouseY <= y2;
 	
 	if( in_selection ) {
-		if( checkAccMods( ACC_MOD_SEC, mods ) )
-			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_ccwrotate") );
-		else
+		// set appropriate cursor
+		if( guessAccel( ACC_ROTATE_CW, ACC_ROTATE_CCW, mods ) )
 			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_cwrotate") );
+		else
+			changeCursor( ResourceManager::get().getCursor(get_window(), "canvasedit_ccwrotate") );
 	} else {
 		changeCursor( Gdk::Cursor::create(Gdk::ARROW) );
 		m_ToolMode = FLIP_MODE_NONE;

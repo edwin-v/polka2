@@ -238,7 +238,7 @@ bool MainWindow::on_delete_event( GdkEventAny * )
 void MainWindow::on_hide()
 {
 	// first hide editor windows (store settings)
-	ObjectManager::instance().hideEditors();
+	ObjectManager::get().hideEditors();
 	// store history visibility
 	Settings::get().setValue( "", "HistoryVisible", m_HistoryWindow.get_visible() );
 	// then hide self
@@ -457,7 +457,7 @@ void MainWindow::onTreeActivate(const Gtk::TreeModel::Path& path, Gtk::TreeViewC
 	
 	Polka::Object *object = m_pProject->getObject( path );
 	if( object ) {
-		Editor *objEdit = ObjectManager::instance().getObjectEditor( object->id() );
+		Editor *objEdit = ObjectManager::get().getObjectEditor( object->id() );
 		if( objEdit ) {
 			objEdit->setObject( object );
 			activateEditor( objEdit );

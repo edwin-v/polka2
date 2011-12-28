@@ -1,6 +1,7 @@
 #ifndef _POLKA_ACCELBASE_H_
 #define _POLKA_ACCELBASE_H_
 
+#include <AccelManager.h>
 #include <gdkmm/types.h>
 #include <glibmm/ustring.h>
 #include <string>
@@ -8,14 +9,6 @@
 
 namespace Polka {
 
-// convenience modifier
-const Gdk::ModifierType MOD_SHIFT = Gdk::SHIFT_MASK;
-const Gdk::ModifierType MOD_CTRL = Gdk::CONTROL_MASK;
-const Gdk::ModifierType MOD_ALT = Gdk::MOD1_MASK;
-const Gdk::ModifierType MOD_LWIN = Gdk::MOD4_MASK;
-const Gdk::ModifierType MOD_RWIN = Gdk::MOD5_MASK;
-
-const guint DBL_CLICK = 256;
 
 class AccelBase
 {
@@ -25,31 +18,22 @@ public:
 
 
 protected:
-	// shortcut/accelerator/actions helpers
-	
-	// create accelerator
-	void accAdd( guint id, const Glib::ustring& path, guint button, guint key = 0, Gdk::ModifierType mods = Gdk::ModifierType(0) );
-	// retrieve accelerator definition
-	const Glib::ustring& accPath( guint id );
-	guint accButton( guint id );
-	guint accKey( guint id );
 	// check accelerator
-	bool checkAccButton( guint id, guint button, guint mods = 0, bool exact = false );
-	bool checkAccKey( guint id, guint key, guint mods = 0, bool exact = false );
-	bool checkAccMods( guint id, guint mods, bool exact = false );
+	bool isAccel( guint id, guint button, guint key, guint mods, bool exact = false );
+	bool isAccel( guint id, guint button, guint key );
+	int isAccel( const std::vector<guint> ids, guint button, guint key, guint mods, bool exact = false );
+	int isAccel( const std::vector<guint> ids, guint button, guint key );
+	bool isAccelMod( guint id, guint mods, bool exact = false );
 	// helpers
-	guint accEventButton( const GdkEventButton *event ) const;
+	bool updateAccel( guint id1, guint id2, bool first, guint mods, guint idflip = -1 );
+	bool guessAccel( guint id1, guint id2, guint mods, guint idflip = -1 );
+	guint accelEventButton( const GdkEventButton *event ) const;
 	
 private:
 	std::string m_Id;
-
-	// accelerators
-	struct Accel {
-		Glib::ustring path;
-		guint button, key;
-		Gdk::ModifierType mods;
-	};
-	std::vector<Accel> m_Accels;
+	const AccelManager::AssignmentMap& m_Accels;
+	
+	int modCount( guint mods );
 	
 };
 

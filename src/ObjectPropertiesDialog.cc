@@ -38,7 +38,7 @@ ObjectPropertiesDialog::ObjectPropertiesDialog( Polka::Object& obj_ )
 	m_CommentsText.get_buffer()->signal_changed().connect( sigc::mem_fun(*this, &ObjectPropertiesDialog::setInfoChanged ) );
 	
 	// create properties tab
-	m_pProperties = ObjectManager::instance().createObjectPropertySheet( obj_ );
+	m_pProperties = ObjectManager::get().createObjectPropertySheet( obj_ );
 	if(m_pProperties) {	
 		manage(m_pProperties);
 		m_pProperties->signalSetModified().connect(
@@ -50,7 +50,7 @@ ObjectPropertiesDialog::ObjectPropertiesDialog( Polka::Object& obj_ )
 	m_LinksBox.set_border_width( 10 );
 	m_LinksBox.pack_start( m_UsesLabel, Gtk::PACK_SHRINK );
 
-	ObjectManager& om = ObjectManager::instance();
+	ObjectManager& om = ObjectManager::get();
 	// generate dependency text
 	Glib::ustring depStr;
 	DependencyMap::iterator it = m_Object.m_Dependencies.begin();
