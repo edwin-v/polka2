@@ -50,6 +50,7 @@ private:
 	void onEditDelete();
 	void onEditRename();
 	void onEditProperties();
+	void onEditPreferences();
 	void onViewHistory();
 	void onHelpAbout();
 	

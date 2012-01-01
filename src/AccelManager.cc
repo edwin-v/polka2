@@ -81,7 +81,39 @@ void AccelManager::addAccelMap( const std::string& context, const DefinitionMap&
 	}
 }
 
-const AccelManager::AssignmentMap& AccelManager::getAccelContext( const std::string& context )
+std::vector<std::string> AccelManager::getContexts() const
+{
+	std::vector<std::string> vec;
+	auto dit = m_Definitions.begin();
+	while( dit != m_Definitions.end() ) {
+		vec.push_back( dit->first );
+		++dit;
+	}
+	return vec;
+}
+
+const AccelManager::DefinitionMap& AccelManager::getAccelDefinitons( const std::string& context ) const
+{
+	auto it = m_Definitions.find(context);
+	assert( it != m_Definitions.end() );
+	return *it->second;
+}
+
+const AccelManager::Definition& AccelManager::getAccelDefiniton( const std::string& context, const std::string& id ) const
+{
+	auto it = m_Definitions.find(context);
+	assert( it != m_Definitions.end() );
+	auto dit = it->second->begin();
+	while( dit != it->second->end() ) {
+		if( dit->id == id )
+			break;
+		++dit;
+	}
+	assert( dit != it->second->end() );
+	return *dit;
+}
+
+const AccelManager::AssignmentMap& AccelManager::getAccelContext( const std::string& context ) const
 {
 	static const AssignmentMap empty;
 	
@@ -91,14 +123,113 @@ const AccelManager::AssignmentMap& AccelManager::getAccelContext( const std::str
 	return it->second;
 }
 
+AccelManager::Assignment& AccelManager::getAccelAssignment( const std::string& context, const std::string& id )
+{
+	// get context
+	auto dcit = m_Definitions.find(context);
+	assert( dcit != m_Definitions.end() );
+	// find definition
+	auto dit = dcit->second->begin();
+	int n = 0;
+	while( dit != dcit->second->end() ) {
+		if( dit->id == id ) break;
+		++dit;
+		++n;
+	}
+	assert( dit != dcit->second->end() );
+	// return matching assignment
+	Assignment& a = m_Assignments[context][n];
+	if( !a.updated ) updateLink( context, n );
+	return a;
+}
+
 void AccelManager::updateLink( const std::string& context, guint accel )
 {
-	auto defit = m_Definitions.find(context);
-	if( defit == m_Definitions.end() ) return;
-	if( defit->second->size() <= accel ) return;
+	auto dcit = m_Definitions.find(context);
+	if( dcit == m_Definitions.end() ) return;
+	if( dcit->second->size() <= accel ) return;
 
-	Definition accdef = (*defit->second)[accel];
-	Assignment accass = m_Assignments[context][accel];
+	Assignment& a = m_Assignments[context][accel];
+	
+	if( a.link.size() ) {
+		// determine target context/id
+		std::string cx = context, l;
+		size_t p = a.link.find(':');
+		if( p != std::string::npos ) {
+			// get context from link
+			cx = a.link.substr(0, p);
+			l = a.link.substr(p+1);
+		} else
+			l = a.link;
+
+		// get target context
+		auto tcit = m_Definitions.find(context);
+		if( tcit == m_Definitions.end() ) return;
+		// find target id
+		auto tdit = tcit->second->begin();
+		int n = 0;
+		while( tdit != tcit->second->end() ) {
+			if( tdit->id == l ) break;
+			++tdit;
+			n++;
+		}
+		if( tdit == tcit->second->end() ) return;
+		
+		Assignment& ta = m_Assignments[cx][n];
+		if( !ta.updated ) updateLink( cx, n );
+		
+		a.button = ta.button;
+		a.key = ta.key;
+		a.modifiers = ta.modifiers;
+	}
+	
+	a.updated = true;
+}
+
+Glib::ustring AccelManager::linkDisplayText( const std::string& context, const std::string& link )
+{
+	std::string cx = context, l = link;
+	size_t p = link.find(':');
+	if( p != std::string::npos ) {
+		// get context from link
+		cx = link.substr(0, p);
+		l = link.substr(p+1);
+	}
+	// get context
+	auto dcit = m_Definitions.find(context);
+	assert( dcit != m_Definitions.end() );
+	// find definition
+	auto dit = dcit->second->begin();
+	while( dit != dcit->second->end() ) {
+		if( dit->id == l ) break;
+		++dit;
+	}
+	assert( dit != dcit->second->end() );
+	// create string
+	Glib::ustring t;
+	if( cx != context )
+		t = cx + ": ";
+	for( unsigned int i = 0; i < dit->location.size(); i++ ) {
+		if(i) t += '/';
+		t += dit->location[i];
+	}
+	
+	return t;
+}
+
+void AccelManager::changed()
+{
+	// invalidate all links
+	auto cit = m_Assignments.begin();
+	while( cit != m_Assignments.end() ) {
+		auto ait = cit->second.begin();
+		while( ait != cit->second.end() ) {
+			if( !ait->link.empty() )
+				ait->updated = false;
+			++ait;
+		}
+		++cit;
+	}
 }
 
 } // namespace ...

@@ -79,7 +79,7 @@ const AccelManager::DefinitionMap ACCELS = {
 	{ // Incremental id      Text id               Pref Gui location                                   Description
 	     ACC_SELECT_FLOAT,   "select_float",       { _("Tools"), _("Select"), _("Float selection") },  _("This option changes the selection under the pointer to floating."),
 	  // Type                Allowed links
-	     DEF_MODIFIER,       {},
+	     DEF_ACTION,         {},
 	  // Link                Button  Key           Modifiers
 	     "",                 1+DBL_CLICK,  0,      MOD_NONE },
 // TOOL EYEDROPPER
@@ -99,14 +99,14 @@ const AccelManager::DefinitionMap ACCELS = {
 	     "",                 3,      0,            MOD_NONE },
 // Quick pick FG
 	{ // Incremental id      Text id               Pref Gui location                                   Description
-	     ACC_QUICKPICK_FG,   "colorpick_fg",       { _("Tools"), _("Color picker"), _("Quick pick foreground") }, _("This combination picks the foreground color while not using the eyedropper tool. This function only works of the combination is not assigned to another function in the active tool."),
+	     ACC_QUICKPICK_FG,   "quickpick_fg",       { _("Tools"), _("Color picker"), _("Quick pick foreground") }, _("This combination picks the foreground color while not using the eyedropper tool. This function only works of the combination is not assigned to another function in the active tool."),
 	  // Type                Allowed links
 	     DEF_ACTION,         {},
 	  // Link                Button  Key           Modifiers
 	     "",                 3,      0,            MOD_NONE },
 // Quick pick BG
 	{ // Incremental id      Text id               Pref Gui location                                   Description
-	     ACC_QUICKPICK_BG,   "colorpick_bg",       { _("Tools"), _("Color picker"), _("Quick pick background") }, _("This combination picks the background color while not using the eyedropper tool. This function only works of the combination is not assigned to another function in the active tool."),
+	     ACC_QUICKPICK_BG,   "quickpick_bg",       { _("Tools"), _("Color picker"), _("Quick pick background") }, _("This combination picks the background color while not using the eyedropper tool. This function only works of the combination is not assigned to another function in the active tool."),
 	  // Type                Allowed links
 	     DEF_ACTION,         {},
 	  // Link                Button  Key           Modifiers

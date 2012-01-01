@@ -5,6 +5,7 @@
 
 // common signal definitions
 typedef sigc::signal<void, int> IntSignal;
+typedef sigc::signal<void, int, int> IntIntSignal;
 typedef sigc::signal<void> VoidSignal;
 
 

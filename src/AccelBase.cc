@@ -160,7 +160,7 @@ bool AccelBase::updateAccel( guint id1, guint id2, bool first, guint mods, guint
 		else if( m1 )
 			// both match, choose the one with the most matching accels
 			first = modCount(m_Accels[id1].modifiers) > modCount(m_Accels[id2].modifiers);
-	} else if( idflip >= 0 ) {
+	} else if( idflip != guint(-1) ) {
 		// different activators, use flip
 		if( isAccelMod(idflip, mods) )
 			first = !first;
@@ -190,7 +190,7 @@ bool AccelBase::guessAccel( guint id1, guint id2, guint mods, guint idflip )
 			return m1;
 		else
 			return modCount(m_Accels[id1].modifiers) >= modCount(m_Accels[id2].modifiers);
-	} else if( idflip >= 0 ) {
+	} else if( idflip != guint(-1) ) {
 		// different activators, use flip
 		return !isAccelMod(idflip, mods);
 	}

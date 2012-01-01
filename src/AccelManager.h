@@ -24,7 +24,7 @@ const Gdk::ModifierType MOD_DISABLED = Gdk::RELEASE_MASK;
 
 const guint DBL_CLICK = 1<<31;
 
-enum DefinitionType { DEF_ACTION, DEF_MODIFIER };
+enum DefinitionType { DEF_ACTION, DEF_KEY_ACTION, DEF_BUTTON_ACTION, DEF_MODIFIER };
 
 class AccelManager
 {
@@ -61,9 +61,16 @@ public:
 	void addAccelMap( const std::string& context, const DefinitionMap& map );
 
 	// access to assignments
-	const AssignmentMap& getAccelContext( const std::string& context );
+	std::vector<std::string> getContexts() const;
+	const DefinitionMap& getAccelDefinitons( const std::string& context ) const;
+	const Definition& getAccelDefiniton( const std::string& context, const std::string& id ) const;
+	const AssignmentMap& getAccelContext( const std::string& context ) const;
+	Assignment& getAccelAssignment( const std::string& context, const std::string& id );
 	void updateLink( const std::string& context, guint accel );
-
+	Glib::ustring linkDisplayText( const std::string& context, const std::string& link );
+	
+	void changed();
+	
 private:
 	AccelManager();
 	~AccelManager();

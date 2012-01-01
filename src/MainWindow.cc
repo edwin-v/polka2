@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "Editor.h"
 #include "ObjectPropertiesDialog.h"
+#include "PreferencesDialog.h"
 #include "Settings.h"
 #include "ImportManager.h"
 #include <glibmm/i18n.h>
@@ -118,6 +119,8 @@ void MainWindow::buildActions()
 	                      sigc::mem_fun(*this, &MainWindow::onEditRename));
 	m_refActionGroup->add(Gtk::Action::create("EditProperties", Gtk::Stock::PROPERTIES),
 	                      sigc::mem_fun(*this, &MainWindow::onEditProperties));
+	m_refActionGroup->add(Gtk::Action::create("EditPreferences", Gtk::Stock::PREFERENCES),
+	                      sigc::mem_fun(*this, &MainWindow::onEditPreferences));
 
 	// View menu
 	m_refActionGroup->add(Gtk::Action::create("ViewMenu", _("View")));
@@ -170,6 +173,8 @@ void MainWindow::buildActions()
 		"      <separator/>"
 		"      <menuitem action='EditRename'/>"
 		"      <menuitem action='EditProperties'/>"
+		"      <separator/>"
+		"      <menuitem action='EditPreferences'/>"
 		"    </menu>"
 		"    <menu action='ViewMenu'>"
 		"      <menuitem action='ViewHistory'/>"
@@ -429,6 +434,12 @@ void MainWindow::onEditProperties()
 		ObjectPropertiesDialog objDlg( *obj );
 		objDlg.run();
 	}
+}
+
+void MainWindow::onEditPreferences()
+{
+	PreferencesDialog pd;
+	pd.run();
 }
 
 void MainWindow::onViewHistory()
