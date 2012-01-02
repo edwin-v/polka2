@@ -100,6 +100,7 @@ AcceleratorPrefs::AcceleratorPrefs()
 AcceleratorPrefs::~AcceleratorPrefs()
 {
 	Settings::get().setValue( "Preferences/MouseAndKeyboard", "ListSplitterSize", m_AccPane.get_position() );
+	AccelManager::get().save();
 }
 
 void AcceleratorPrefs::fillTree()

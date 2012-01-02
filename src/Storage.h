@@ -57,6 +57,9 @@ public:
 	std::string& setDataField( int id );
 	std::string& setDataField( int row, int id );
 	
+	// deletion
+	bool deleteObject( const std::string& type = "" );
+	
 	// error codes
 	enum ErrorCodes { EFAILEDOPENWRITE = 1, EFAILEDOPENREAD, EFAILSTOREOBJECT,
 	                  EITEMWITHOUTSEPARATOR, EBADITEMLINE, EBADITEMFORMAT,

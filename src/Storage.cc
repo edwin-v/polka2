@@ -235,6 +235,18 @@ Storage& Storage::object()
 	return m_CurItem->object();
 }
 
+bool Storage::deleteObject( const std::string& type )
+{
+	if( !type.empty() ) findObject(type);
+	if( !isObject() ) return false;
+	// delete
+	delete m_CurItem;
+	m_CurItem = 0;
+	m_Items.erase(m_itCurItem);
+	m_itCurItem = m_Items.end();
+	return true;
+}
+
 bool Storage::checkFormat( const std::string& format ) const
 {
 	if( !m_CurItem ) return false;

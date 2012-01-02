@@ -70,12 +70,14 @@ public:
 	Glib::ustring linkDisplayText( const std::string& context, const std::string& link );
 	
 	void changed();
-	
+	void save();
+
 private:
 	AccelManager();
 	~AccelManager();
 	
 	int m_NextId;
+	bool m_Changed;
 	std::map<const std::string, const DefinitionMap *> m_Definitions;
 	std::map<const std::string, AssignmentMap> m_Assignments;
 

@@ -8,6 +8,7 @@ namespace Polka {
 
 
 AccelManager::AccelManager()
+	: m_Changed(false)
 {
 	// store in system config dir
 	std::string settings_file = Glib::get_user_config_dir();
@@ -26,6 +27,7 @@ AccelManager::AccelManager()
 
 AccelManager::~AccelManager()
 {
+	save();
 }
 
 AccelManager& AccelManager::get()
@@ -47,7 +49,7 @@ void AccelManager::addAccelMap( const std::string& context, const DefinitionMap&
 		// find storage container for context
 		bool stored = m_Storage.findObject(context);
 		if( stored ) {
-			stored = m_Storage.object().findItem(context);
+			stored = m_Storage.object().findItem("ACTION_DEFINITIONS");
 			if( stored ) stored = m_Storage.object().checkFormat("[SSIII]");
 		};
 
@@ -229,6 +231,52 @@ void AccelManager::changed()
 			++ait;
 		}
 		++cit;
+	}
+	m_Changed = true;
+}
+
+void AccelManager::save()
+{
+	if( m_Changed ) {
+		// replace all defined context objects
+		auto cit = m_Definitions.begin();
+		while( cit != m_Definitions.end() ) {
+			// get corresponding assignments
+			const AssignmentMap& am = m_Assignments[ cit->first ];
+			// delete current storage for context
+			m_Storage.deleteObject( cit->first );
+			// create new storage
+			Storage& s = m_Storage.createObject( cit->first );
+			s.createItem( "ACTION_DEFINITIONS", "[SSIII]" );
+			// store all non-default modifiers
+			int n = 0;
+			auto dit = cit->second->begin();
+			auto ait = am.begin();
+			while( ait != am.end() ) {
+				// detect changes
+				bool change = dit->link != ait->link;
+				if( !change ) {
+					change = dit->default_key       != ait->key || 
+					         dit->default_button    != ait->button ||
+					         dit->default_modifiers != ait->modifiers;
+				}
+				if( change ) {
+					s.setField( n, 0, dit->id );
+					s.setField( n, 1, ait->link );
+					s.setField( n, 2, int(ait->button) );
+					s.setField( n, 3, int(ait->key) );
+					s.setField( n, 4, int(ait->modifiers) );
+					n++;
+				}
+				++ait;
+				++dit;
+			}
+			// if nothing was saved, delete object
+			if( n == 0 ) m_Storage.deleteObject();
+			++cit;
+		}
+		m_Storage.save();
+		m_Changed = false;
 	}
 }
 
