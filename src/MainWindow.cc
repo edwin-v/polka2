@@ -45,7 +45,6 @@ MainWindow::MainWindow()
 	// prepare main area
 	m_EditBox.pack_start(m_EditorTitle, Gtk::PACK_SHRINK);
 	m_EditBox.pack_start(m_MainFrame);
-	m_EditorTitle.set_justify( Gtk::JUSTIFY_LEFT );
 	m_MainFrame.set_shadow_type( Gtk::SHADOW_NONE );
 	
 	m_LayoutPane.add1(m_TreeFrame);
@@ -54,6 +53,13 @@ MainWindow::MainWindow()
 	show_all_children();
 	
 	m_MainEditor = 0;
+
+	// set editor title bold
+	Pango::AttrList atts;
+	Pango::AttrInt attr = Pango::Attribute::create_attr_weight(Pango::WEIGHT_BOLD);
+	atts.insert(attr);
+	m_EditorTitle.set_attributes(atts);
+
 
 	// retrieve settings
 	Settings::get().getWindowGeometry( "", "MainWindowGeometry", *this, -1, -1, 780, 600 );
