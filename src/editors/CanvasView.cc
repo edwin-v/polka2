@@ -192,10 +192,11 @@ bool CanvasView::on_motion_notify_event(GdkEventMotion* event)
 	if( m_Dragging ) {
 		
 		// move offset
-		int ox = dx() - (event->x - m_DragFromX);
-		m_DragFromX = event->x;
-		int oy = dy() - (event->y - m_DragFromY);
-		m_DragFromY = event->y;
+		int ex = round(event->x), ey = round(event->y);   // due to gtk producting occasional fractional parts
+		int ox = dx() - (ex - m_DragFromX);
+		m_DragFromX = ex;
+		int oy = dy() - (ey - m_DragFromY);
+		m_DragFromY = ey;
 
 		clipDeltas( ox, oy, true );
 		m_pCanvas->setViewOffset( ox, oy );
