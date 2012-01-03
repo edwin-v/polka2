@@ -16,7 +16,8 @@ static const int FILE_VERSION_MAJOR = 0;
 static const int FILE_VERSION_MINOR = 1;
 static const char *FILE_ID_STRING = "POLKA2_PROJECT_FILE";
 
-const char *MIME_BASE = "application/x-polka2";
+const char MIME_BASE[] = "application/x-polka2";
+const char MIME_OBJNAME[] = "-objectname-";
 
 /*
  * Implementation of proxy class
@@ -285,6 +286,7 @@ void Project::onSelectionChanged()
 	
 	Gtk::TreeModel::iterator rit = get_selection()->get_selected();
 	
+	Polka::Object *obj = 0;//(*rit)[m_Cols.m_pObject];
 	if( rit ) {
 		Gtk::TreeModel::Row row = *rit;
 		
@@ -295,7 +297,7 @@ void Project::onSelectionChanged()
 		} else if( row[m_Cols.m_pObject] ) {
 			// row is an object
 			cut = copy = rename = props = true;
-			Polka::Object *obj = row[m_Cols.m_pObject];
+			/*Polka::Object **/obj = row[m_Cols.m_pObject];
 			const std::string& editId = ObjectManager::get().getObjectEditorId( obj->id() );
 			edit = !editId.empty();
 			// delete if nothing depends on it
@@ -339,6 +341,18 @@ void Project::onSelectionChanged()
 	m_refUIManager->get_action("/ui/TreePopup/EditProperties")->set_sensitive(props);
 	m_pNameCellRenderer->set_property("editable", rename);
 
+	// init target types for dragging
+	std::vector<Gtk::TargetEntry> dragTargets;
+	dragTargets.push_back( Gtk::TargetEntry("GTK_TREE_MODEL_ROW") ); // necessary for row ordering
+	// targets for name strings
+	dragTargets.push_back( Gtk::TargetEntry("STRING") );
+	dragTargets.push_back( Gtk::TargetEntry("text/plain") );
+	// support others for data objects
+	if( obj ) {
+		dragTargets.push_back( Gtk::TargetEntry( std::string(MIME_BASE) + std::string(MIME_OBJNAME) + obj->id() ) );
+	}
+	// set source
+	enable_model_drag_source(dragTargets);
 }
 
 void Project::onNameEdited(const Glib::ustring& path_txt, const Glib::ustring& new_text)
@@ -395,6 +409,22 @@ bool Project::on_button_press_event(GdkEventButton *event)
 	}
 	return ret;
 }
+
+void Project::on_drag_data_get( const Glib::RefPtr<Gdk::DragContext>& dc, Gtk::SelectionData& data, guint info, guint time )
+{
+	if( data.get_target() == "STRING" || data.get_target() == "text/plain" ||
+		data.get_target().substr(0, sizeof(MIME_BASE)+sizeof(MIME_OBJNAME)) == std::string(MIME_BASE)+MIME_OBJNAME)
+	{
+		Gtk::TreeModel::iterator rit = get_selection()->get_selected();
+		if( rit ) {
+			Gtk::TreeModel::Row row = *rit;
+			const Glib::ustring& name = row[m_Cols.m_Name];
+			data.set( data.get_target(), 8, (const guint8*)name.data(), name.bytes() );
+		}
+	} else
+		Gtk::TreeView::on_drag_data_get(dc, data, info, time);
+}
+
 
 Project::SignalEditObject Project::signalEditObject()
 {

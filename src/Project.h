@@ -15,7 +15,8 @@
 
 namespace Polka {
 
-extern const char *MIME_BASE;
+extern const char MIME_BASE[];
+extern const char MIME_OBJNAME[];
 
 class Editor;
 class Storage;
@@ -68,6 +69,8 @@ public:
 protected:
 	// handlers for popup menu
 	virtual bool on_button_press_event(GdkEventButton *event);
+	// drag handler
+	virtual void on_drag_data_get( const Glib::RefPtr<Gdk::DragContext>& dc, Gtk::SelectionData& data, guint info, guint time );
 
 private:
 	// Tree model columns
