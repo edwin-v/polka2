@@ -16,8 +16,9 @@ static const int FILE_VERSION_MAJOR = 0;
 static const int FILE_VERSION_MINOR = 1;
 static const char *FILE_ID_STRING = "POLKA2_PROJECT_FILE";
 
-const char MIME_BASE[] = "application/x-polka2";
-const char MIME_OBJNAME[] = "-objectname-";
+#define _MIME_BASE "application/x-polka2"
+const std::string MIME_BASE = _MIME_BASE;
+const std::string MIME_OBJNAME = _MIME_BASE"-objectname-";
 
 /*
  * Implementation of proxy class
@@ -349,10 +350,10 @@ void Project::onSelectionChanged()
 	dragTargets.push_back( Gtk::TargetEntry("text/plain") );
 	// support others for data objects
 	if( obj ) {
-		dragTargets.push_back( Gtk::TargetEntry( std::string(MIME_BASE) + std::string(MIME_OBJNAME) + obj->id() ) );
+		dragTargets.push_back( Gtk::TargetEntry( MIME_OBJNAME + obj->id() ) );
 	}
 	// set source
-	enable_model_drag_source(dragTargets);
+	enable_model_drag_source(dragTargets, Gdk::MODIFIER_MASK, Gdk::ACTION_COPY | Gdk::ACTION_LINK);
 }
 
 void Project::onNameEdited(const Glib::ustring& path_txt, const Glib::ustring& new_text)
@@ -413,7 +414,7 @@ bool Project::on_button_press_event(GdkEventButton *event)
 void Project::on_drag_data_get( const Glib::RefPtr<Gdk::DragContext>& dc, Gtk::SelectionData& data, guint info, guint time )
 {
 	if( data.get_target() == "STRING" || data.get_target() == "text/plain" ||
-		data.get_target().substr(0, sizeof(MIME_BASE)+sizeof(MIME_OBJNAME)) == std::string(MIME_BASE)+MIME_OBJNAME)
+		data.get_target().substr(0, MIME_OBJNAME.size()) == MIME_OBJNAME )
 	{
 		Gtk::TreeModel::iterator rit = get_selection()->get_selected();
 		if( rit ) {

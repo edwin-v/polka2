@@ -2,6 +2,8 @@
 #include "Canvas.h"
 #include "Palette.h"
 #include "AccelManager.h"
+#include "Project.h"
+#include "Functions.h"
 #include <gtkmm/alignment.h>
 #include <gtkmm/spinbutton.h>
 #include <gtkmm/label.h>
@@ -218,6 +220,7 @@ CanvasEditor::CanvasEditor()
 	: Editor(ID), m_pCanvas(0), m_CanvasView(ID)
 {
 	Gtk::HBox *hbox = manage( new Gtk::HBox );
+	hbox->set_border_width(1);
 	pack_start( *hbox, Gtk::PACK_EXPAND_WIDGET );
 	// left column
 	Gtk::VBox *vbox = manage( new Gtk::VBox );
@@ -275,6 +278,13 @@ void CanvasEditor::assignObject( Polka::Object *obj )
 		m_CanvasView.setCanvas( m_pCanvas );
 		m_ColorChooser.setPalette( &m_pCanvas->palette() );
 		set_sensitive();
+		// set valid drag destination targets 
+		std::vector<Gtk::TargetEntry> dragTargets;
+		std::vector<std::string> types = split( obj->dependencyType(DEP_PAL), ',' );
+		for( unsigned int i = 0; i < types.size(); i++ )
+			dragTargets.push_back( Gtk::TargetEntry( MIME_OBJNAME + types[i]) );
+		drag_dest_set( dragTargets, Gtk::DEST_DEFAULT_ALL, Gdk::ACTION_LINK );
+		
 		queue_draw();
 		//m_Updating = false;
 	} else {
@@ -296,6 +306,7 @@ void CanvasEditor::reset()
 	m_CanvasView.setCanvas(0);
 	m_ColorChooser.setPalette(0);
 	set_sensitive(false);
+	drag_dest_unset();
 	queue_draw();
 }
 
@@ -303,11 +314,23 @@ void CanvasEditor::reset()
 void CanvasEditor::objectUpdated( bool full )
 {
 	if( full ) {
+		// full update includes dependecy changes
+		m_ColorChooser.setPalette( &m_pCanvas->palette() );
 		// redraw everything
 		queue_draw();
 	} else {
 		// redraw palette
 		m_CanvasView.canvasChanged( m_pCanvas->lastUpdate() );
+	}
+}
+
+void CanvasEditor::on_drag_data_received( const Glib::RefPtr<Gdk::DragContext>& dc, int x, int y, const Gtk::SelectionData& data, guint info, guint time)
+{
+	if( m_pCanvas ) {
+		Glib::ustring name( (const char*)data.get_data(), data.get_length() );
+		std::cout << "SetPal: " << name << std::endl;
+		Palette *pal = dynamic_cast<Palette*>( m_pCanvas->project().findObject(name) );
+		if(pal) m_pCanvas->setPalette(*pal);
 	}
 }
 

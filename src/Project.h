@@ -15,8 +15,8 @@
 
 namespace Polka {
 
-extern const char MIME_BASE[];
-extern const char MIME_OBJNAME[];
+extern const std::string MIME_BASE;
+extern const std::string MIME_OBJNAME;
 
 class Editor;
 class Storage;

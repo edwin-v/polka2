@@ -29,6 +29,8 @@ protected:
 	virtual void on_hide();
 	virtual void assignObject( Polka::Object *obj );
 
+	virtual void on_drag_data_received( const Glib::RefPtr<Gdk::DragContext>& dc, int x, int y, const Gtk::SelectionData& data, guint info, guint time);
+
 private:
 	Canvas *m_pCanvas;
 
