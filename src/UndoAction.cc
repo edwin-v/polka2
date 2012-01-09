@@ -1,7 +1,9 @@
 #include "UndoAction.h"
 #include "UndoHistory.h"
 #include "Object.h"
-
+#include "Project.h"
+#include <cassert>
+#include <iostream>
 
 namespace Polka {
 
@@ -9,6 +11,12 @@ UndoAction::UndoAction( UndoHistory& hist, Object& source )
 	: m_History( hist )
 {
 	m_Source = source.name();
+	m_History.registerAction(this);
+}
+
+UndoAction::UndoAction( UndoHistory& hist )
+	: m_History( hist )
+{
 	m_History.registerAction(this);
 }
 
@@ -73,6 +81,22 @@ Storage& UndoAction::undoData()
 Storage& UndoAction::redoData()
 {
 	return m_RedoStorage;
+}
+
+void UndoAction::undo( Project& project )
+{
+ std::cout << "undo:" << m_Source << std::endl;
+	Object *obj = project.editObject( m_Source );
+	assert( obj );
+	obj->undo( m_UndoId, m_UndoStorage );
+}
+
+void UndoAction::redo( Project& project )
+{
+ std::cout << "redo:" << m_Source << std::endl;
+	Object *obj = project.editObject( m_Source );
+	assert( obj );
+	obj->redo( m_RedoId, m_RedoStorage );
 }
 
 

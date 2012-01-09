@@ -11,6 +11,8 @@ namespace Polka {
 
 class UndoHistory;
 class Object;
+class Project;
+class UndoActionGroup;
 
 class UndoAction
 {
@@ -31,12 +33,18 @@ public:
 	const std::string& redoId() const;
 	Storage& undoData();
 	Storage& redoData();
-	
-private:
+
+protected:	
 	UndoAction( UndoHistory& hist, Polka::Object& source );
+	UndoAction( UndoHistory& hist );
 	~UndoAction();
 
+	virtual void undo( Project& project );
+	virtual void redo( Project& project );
+
+private:
 	friend class UndoHistory;
+	friend class UndoActionGroup;
 
 	Glib::ustring m_Name;
 	UndoHistory& m_History;

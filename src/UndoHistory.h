@@ -17,6 +17,8 @@ public:
 	~UndoHistory();
 	
 	UndoAction& createAction( Object& object );
+	void openActionGroup();
+	void closeActionGroup();
 
 	void clearHistory();
 	void clearUndoHistory( unsigned int num_remain = 0 );
@@ -38,6 +40,7 @@ private:
 	std::vector<UndoAction*> m_UndoActions;
 	std::vector<UndoAction*> m_RedoActions;
 	Project& m_Project;
+	bool m_Grouped;
 
 	friend class UndoAction;
 	
