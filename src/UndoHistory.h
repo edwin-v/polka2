@@ -17,7 +17,7 @@ public:
 	~UndoHistory();
 	
 	UndoAction& createAction( Object& object );
-	void openActionGroup();
+	void openActionGroup( Glib::ustring name, Glib::RefPtr<Gdk::Pixbuf> icon );
 	void closeActionGroup();
 
 	void clearHistory();

@@ -79,11 +79,13 @@ UndoAction& UndoHistory::createAction( Object& object )
 	return *(new UndoAction( *this, object ));
 }
 
-void UndoHistory::openActionGroup()
+void UndoHistory::openActionGroup( Glib::ustring name, Glib::RefPtr<Gdk::Pixbuf> icon )
 {
 	if( m_Grouped ) closeActionGroup();
 	
-	new UndoActionGroup(*this);
+	UndoAction *a = new UndoActionGroup(*this);
+	a->setName(name);
+	a->setIcon(icon);
 	
 	m_Grouped = true;
 }
