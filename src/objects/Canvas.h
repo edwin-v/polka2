@@ -29,7 +29,7 @@ public:
 	int pixelScaleHor() const;
 	int pixelScaleVer() const;
 	void setPixelScale( int hor, int ver );
-	void resize( int w, int h, int horscale = -1, int verscale = -1);
+	void resize( int w, int h, int horscale = -1, int verscale = -1, bool store_undo = false );
 	
 	// grids
 	int tileGridWidth() const;
@@ -105,6 +105,7 @@ private:
 
 	friend class CanvasData;
 	
+	void undoAction( const std::string& id, Storage& s );
 	bool addChangedRect( const Gdk::Rectangle& rect );
 };
 

@@ -4,11 +4,13 @@
 #include "Palette.h"
 #include "HIGFrame.h"
 #include "Functions.h"
+#include "ResourceManager.h"
 #include <gtkmm/label.h>
 #include <gtkmm/table.h>
 #include <gtkmm/alignment.h>
 #include <glibmm/i18n.h>
 #include <iostream>
+
 namespace Polka {
 
 struct Template {
@@ -201,10 +203,11 @@ void BitmapCanvasPropertySheet::apply() const
 		ys = 2; 
 	else if( m_Wide.get_active() ) 
 		xs = 2; 
-		
-	m_Canvas.resize( m_Width.get_value_as_int(), m_Height.get_value_as_int(), xs, ys );
+	
+	m_Canvas.resize( m_Width.get_value_as_int(), m_Height.get_value_as_int(), xs, ys, true );
 	Palette *pal = dynamic_cast<Palette*>( m_Canvas.project().findObject( m_Palettes.get_active_text() ) );
 	m_Canvas.setPalette(*pal);
+	
 }
 
 void BitmapCanvasPropertySheet::reset() const

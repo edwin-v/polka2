@@ -38,11 +38,17 @@ public:
 	
 	// global project
 	UndoHistory& undoHistory();
+	void projectUndo( const std::string& id, Storage& s );
+	void projectRedo( const std::string& id, Storage& s );
+	void projectUndoAction( const std::string& action, Storage& s );
 	
 	// interface
 	void startRename();
 	void deleteObject();
 	Polka::Object *editObject( const Glib::ustring& name );
+	Polka::Object *editObject( guint32 funid );
+	void setObjectName( Polka::Object& obj, const Glib::ustring& name );
+	void setObjectComments( Polka::Object& obj, const Glib::ustring& comments );
 
 	// object access
 	Polka::Object *getObject();
@@ -51,6 +57,7 @@ public:
 	Polka::Object *findObjectOfType( const std::string& id ) const;
 	Polka::Object *findObjectOfTypes( const std::string& ids ) const;
 	Polka::Object *findObject( const Glib::ustring& name ) const;
+	Polka::Object *findObject( guint32 funid ) const;
 	void findAllObjectsOfType( const std::string& id, std::vector<Polka::Object*>& vec ) const;
 
 	// object creation
@@ -58,6 +65,7 @@ public:
 	bool checkObjectRequirements( const std::string& id );
 	Storage& createImportObjects( const std::string& name = "" );
 	void finishImportObjects();
+	guint32 getNewFunid() const;
 
 	// Edit signal
 	typedef sigc::signal<void, Editor*> SignalEditObject;
@@ -65,7 +73,7 @@ public:
 	typedef sigc::signal<void> SignalTreeUpdate;
 	SignalTreeUpdate signalTreeUpdate();
 
-	
+
 protected:
 	// handlers for popup menu
 	virtual bool on_button_press_event(GdkEventButton *event);
@@ -89,27 +97,9 @@ private:
 		Gtk::TreeModelColumn< Glib::RefPtr<Gdk::Pixbuf> > m_rpIcon;
   	};
 
-	// private class that connects undo/redo actions to the main tree
-	class ProjectActionProxy : public Polka::Object
-	{
-	public:
-		ProjectActionProxy( Project& _prj );
-		~ProjectActionProxy();
-
-		// undo
-		virtual void undo( const std::string& id, Storage& s );
-		virtual void redo( const std::string& id, Storage& s );
-
-	private:
-		void performAction( const std::string& action, Storage& s );
-	};
-
-	friend class ProjectActionProxy;
-
 	// basic project vars
 	std::string m_Filename;
 	Glib::ustring m_ProjectName;
-	ProjectActionProxy m_UndoProxy;
 	std::list<Polka::Object*> m_Objects;
 	// project undo storage
 	UndoHistory m_History;

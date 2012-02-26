@@ -7,10 +7,10 @@
 
 namespace Polka {
 
-UndoAction::UndoAction( UndoHistory& hist, Object& source )
+UndoAction::UndoAction( UndoHistory& hist, guint32 suid )
 	: m_History( hist )
 {
-	m_Source = source.name();
+	m_SourceId = suid;
 	m_History.registerAction(this);
 }
 
@@ -24,9 +24,9 @@ UndoAction::~UndoAction()
 {
 }
 
-const Glib::ustring& UndoAction::source() const
+guint32 UndoAction::sourceId() const
 {
-	return m_Source;
+	return m_SourceId;
 }
 
 void UndoAction::setName( Glib::ustring name )
@@ -85,18 +85,26 @@ Storage& UndoAction::redoData()
 
 void UndoAction::undo( Project& project )
 {
- std::cout << "undo:" << m_Source << std::endl;
-	Object *obj = project.editObject( m_Source );
-	assert( obj );
-	obj->undo( m_UndoId, m_UndoStorage );
+	if( m_SourceId ) {
+		Object *obj = project.editObject( m_SourceId );
+		assert( obj );
+		std::cout << "undo:" << obj->name() << std::endl;
+		obj->objectUndo( m_UndoId, m_UndoStorage );
+	} else {
+		project.projectUndo( m_UndoId, m_UndoStorage );
+	}
 }
 
 void UndoAction::redo( Project& project )
 {
- std::cout << "redo:" << m_Source << std::endl;
-	Object *obj = project.editObject( m_Source );
-	assert( obj );
-	obj->redo( m_RedoId, m_RedoStorage );
+	if( m_SourceId ) {
+		Object *obj = project.editObject( m_SourceId );
+		assert( obj );
+		std::cout << "redo:" << obj->name() << std::endl;
+		obj->objectRedo( m_RedoId, m_RedoStorage );
+	} else {
+		project.projectRedo( m_RedoId, m_RedoStorage );
+	}
 }
 
 

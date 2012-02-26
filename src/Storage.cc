@@ -31,6 +31,7 @@ Storage::~Storage()
 
 void Storage::setFileIdentification( const std::string& id, int major, int minor )
 {
+	assert( minor < 1000 ); // limit minor version
 	createItem( id, "II" );
 	setField( 0, major );
 	setField( 1, minor );
@@ -65,6 +66,15 @@ int Storage::versionMinor() const
 	else
 		return m_VersionMinor;
 }
+
+int Storage::version() const
+{
+	if( m_pParent )
+		return m_pParent->version();
+	else
+		return 1000*m_VersionMajor+m_VersionMinor;
+}
+
 
 int Storage::load()
 {
@@ -793,7 +803,7 @@ int Storage::Item::load( std::istream& f )
 	}
 
 	std::string line;
-	size_t ptr;
+	size_t ptr = 0;
 	while( fld < numFields ) {
 		// skip white space
 		if( ptr >= line.size() || (ptr = line.find_first_not_of(" \t\r\n", ptr)) == std::string::npos ) {

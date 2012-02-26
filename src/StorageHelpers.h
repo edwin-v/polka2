@@ -11,6 +11,7 @@ class Storage;
 
 // action names
 extern const char *ACTION_RENAME;
+extern const char *ACTION_COMMENTS;
 extern const char *ACTION_CREATE;
 extern const char *ACTION_OBJECTS;
 extern const char *ACTION_CREATEFOLDER;
@@ -18,6 +19,8 @@ extern const char *ACTION_DELETE;
 extern const char *ACTION_MULTIPLE;
 
 void storageRename( Storage& s, const Glib::ustring& from, const Glib::ustring& to );
+void storageRename( Storage& s, guint32 oid, const Glib::ustring& to );
+void storageComments( Storage& s, guint32 oid, const Glib::ustring& comments );
 void storageSetRect( Storage& s, const std::string& name, const Gdk::Rectangle& rect );
 bool storageGetRect( Storage& s, const std::string& name, Gdk::Rectangle& rect );
 void storageSetObjectName( Storage& s, const std::string& name );

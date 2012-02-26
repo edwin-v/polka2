@@ -13,112 +13,12 @@
 namespace Polka {
 
 static const int FILE_VERSION_MAJOR = 0;
-static const int FILE_VERSION_MINOR = 1;
+static const int FILE_VERSION_MINOR = 2;
 static const char *FILE_ID_STRING = "POLKA2_PROJECT_FILE";
 
 #define _MIME_BASE "application/x-polka2"
 const std::string MIME_BASE = _MIME_BASE;
 const std::string MIME_OBJNAME = _MIME_BASE"-objectname-";
-
-/*
- * Implementation of proxy class
- */
-
-Project::ProjectActionProxy::ProjectActionProxy( Project& _prj )
-	: Object( _prj, "" )
-{
-}
-
-Project::ProjectActionProxy::~ProjectActionProxy()
-{
-}
-
-void Project::ProjectActionProxy::undo( const std::string& id, Storage& s )
-{
-	performAction( id, s );
-}
-
-void Project::ProjectActionProxy::redo( const std::string& id, Storage& s )
-{
-	performAction( id, s );
-}
-
-void Project::ProjectActionProxy::performAction( const std::string& action, Storage& s )
-{
-	if( action == ACTION_RENAME ) {
-
-		// get names
-		if( s.findItem("NAMES") ) {
-			Glib::ustring fromName( s.stringField(0) );
-			Glib::ustring toName( s.stringField(1) );
-			// rename the object
-			project().renameLocation( fromName, toName );
-		}
-
-	} else if( action == ACTION_CREATEFOLDER ) {
-
-		// get location and name
-		if( s.findItem("CREATE_FOLDER") ) {
-			Glib::ustring location( s.stringField(0) );
-			Glib::ustring name( s.stringField(1) );
-			// let project create named folder
-			project().createFolder( location, name );
-		}
-
-	} else if( action == ACTION_DELETE ) {
-
-		if( s.findItem("DELETE_NAME") ) {
-			Glib::ustring name( s.stringField(0) );
-			project().deleteLocation( name );
-		}
-
-	} else if( action  == ACTION_CREATE ) {
-
-		if( s.findItem("CREATE_EMPTY") ) {
-			std::string objtype( s.stringField(0) );
-			std::string location( s.stringField(1) );
-			std::string name( s.stringField(2) );
-			// let project create named folder
-			project().createNewObject( location, name, objtype );
-		}
-		
-	} else if( action  == ACTION_OBJECTS ) {
-
-		// read objects
-		bool readObjs = s.findObject();
-		while( readObjs ) {
-			const std::string& objtype = s.objectType();
-			Storage& objS = s.object();
-			// next object (do it now, so continue will work)
-			readObjs = s.findNextObject();		
-
-			// all objects have a name and location
-			if( !objS.findItem("OBJECT_NAME") ) continue;
-			Glib::ustring name = objS.stringField(0);
-
-			// object container
-			if( !objS.findItem("LOCATION") ) continue;
-			Glib::ustring location = objS.stringField(0);
-
-			project().createObject( location, name, objtype, objS );
-		}
-		
-	} else if( action == ACTION_MULTIPLE ) {
-
-		// read objects
-		bool readObjs = s.findObject();
-		while( readObjs ) {
-			const std::string& objtype = s.objectType();
-			Storage& objS = s.object();
-			
-			performAction( objtype, objS );
-
-			// next object
-			readObjs = s.findNextObject();		
-		}
-		
-	}
-}
 
 
 /*
@@ -127,14 +27,14 @@ void Project::ProjectActionProxy::performAction( const std::string& action, Stor
 
 
 Project::Project( Glib::RefPtr<Gtk::UIManager> ui_manager )
-	: Gtk::TreeView(), m_UndoProxy(*this), m_History(*this), m_pImportAction(0),
+	: Gtk::TreeView(), m_History(*this), m_pImportAction(0),
 	  m_refUIManager( ui_manager ), m_CreateMenuId(0)
 {
 	init();
 }
 
 Project::Project( Glib::RefPtr<Gtk::UIManager> ui_manager, const std::string& filename )
-	: Gtk::TreeView(), m_UndoProxy(*this), m_History(*this), m_pImportAction(0), 
+	: Gtk::TreeView(), m_History(*this), m_pImportAction(0), 
 	  m_refUIManager( ui_manager ), m_CreateMenuId(0)
 {
 	init();
@@ -372,7 +272,7 @@ void Project::onNameEdited(const Glib::ustring& path_txt, const Glib::ustring& n
 			// same, do nothing
 		} else if( std::find( names.begin(), names.end(), new_text ) == names.end() ) {
 			// create undo information
-			UndoAction& action = m_History.createAction( m_UndoProxy );
+			UndoAction& action = m_History.createAction();
 			action.setIcon( row[m_Cols.m_rpIcon] );
 			action.setName( _("Renamed '") + row[m_Cols.m_Name] + _("' to '") + new_text + _("'") );
 			storageRename( action.setUndoData( ACTION_RENAME ), new_text, row[m_Cols.m_Name] );
@@ -393,6 +293,34 @@ void Project::onNameEdited(const Glib::ustring& path_txt, const Glib::ustring& n
 			// restart editing
 			set_cursor(path, *get_column(0), *m_pNameCellRenderer, true );
 		}
+	}
+}
+
+void Project::setObjectName( Polka::Object& obj, const Glib::ustring& name )
+{
+	if( obj.name() != name ) {
+		// create undo
+		UndoAction& action = m_History.createAction();
+		action.setIcon( ObjectManager::get().iconFromId( obj.id() ) );
+		action.setName( _("Renamed '") + obj.name() + _("' to '") + name + _("'") );
+		storageRename( action.setUndoData( ACTION_RENAME ), obj.funid(), obj.name() );
+		storageRename( action.setRedoData( ACTION_RENAME ), obj.funid(), name );
+		// rename object
+		renameLocation( obj.name(), name );
+	}
+}
+
+void Project::setObjectComments( Polka::Object& obj, const Glib::ustring& comments )
+{
+	if( obj.comments() != comments ) {
+		// create undo
+		UndoAction& action = m_History.createAction();
+		action.setIcon( ObjectManager::get().iconFromId( obj.id() ) );
+		action.setName( _("Changed '") + obj.name() + _("' comments") );
+		storageComments( action.setUndoData( ACTION_COMMENTS ), obj.funid(), obj.comments() );
+		storageComments( action.setRedoData( ACTION_COMMENTS ), obj.funid(), comments );
+		// change comments
+		obj.setComments( comments );
 	}
 }
 
@@ -503,6 +431,7 @@ int Project::loadFromFile( const std::string& filename )
 			newObj->setName( newRow[m_Cols.m_Name] );
 			// let object load
 			newObj->load( objS );
+			newObj->setInitMode(false);
 			// edited object?
 			if( objS.findItem("IN_EDITOR") ) {
 				if( objS.checkFormat("I") ) {
@@ -654,9 +583,20 @@ void Project::onEdit()
 
 Polka::Object *Project::editObject( const Glib::ustring& name )
 {
-	if( name.empty() ) return const_cast<ProjectActionProxy*>(&m_UndoProxy);
-
 	Polka::Object *obj = findObject( name );
+	if( obj ) {
+		Editor *objEdt = ObjectManager::get().getObjectEditor( obj->id() );
+		if( objEdt ) {
+			objEdt->setObject(obj);
+			m_SignalEditObject.emit( objEdt );
+		}
+	}	
+	return obj;	
+}
+
+Polka::Object *Project::editObject( guint32 funid )
+{
+	Polka::Object *obj = findObject( funid );
 	if( obj ) {
 		Editor *objEdt = ObjectManager::get().getObjectEditor( obj->id() );
 		if( objEdt ) {
@@ -682,7 +622,7 @@ void Project::onCreateFolder()
 
 		Glib::ustring name = row[m_Cols.m_Name];
 		// create undo information
-		UndoAction& action = m_History.createAction( m_UndoProxy );
+		UndoAction& action = m_History.createAction();
 		action.setName( _("Create new folder") );
 		action.setIcon( row[m_Cols.m_rpIcon] );
 		Storage& su = action.setUndoData( ACTION_DELETE );
@@ -722,7 +662,7 @@ void Project::onCreateObject()
 		Gtk::TreeModel::iterator newIt = createObject( rit, createUniqueName( typeName ), name );
 		Gtk::TreeModel::Row row = *newIt;
 		// create undo information
-		UndoAction& action = m_History.createAction( m_UndoProxy );
+		UndoAction& action = m_History.createAction();
 		action.setName( _("Create new ") + typeName );
 		action.setIcon( row[m_Cols.m_rpIcon] );
 		// set undo delete
@@ -803,7 +743,7 @@ void Project::deleteObject()
 	if( rit ) {
 		Gtk::TreeModel::Row row = *rit;
 		// create undo information
-		UndoAction& action = m_History.createAction( m_UndoProxy );
+		UndoAction& action = m_History.createAction();
 		action.setName( _("Deleted '") + row[m_Cols.m_Name] + "'");
 		action.setIcon( row[m_Cols.m_rpIcon] );
 		// create location string
@@ -943,6 +883,16 @@ Polka::Object *Project::findObject( const Glib::ustring& name ) const
 	return 0;
 }
 
+Polka::Object *Project::findObject( guint32 funid ) const
+{
+	std::list<Polka::Object*>::const_iterator it = m_Objects.begin();
+	while( it != m_Objects.end() ) {
+		if( (*it)->funid() == funid ) return *it;
+		it++;
+	}
+	return 0;
+}
+
 void Project::findAllObjectsOfType( const std::string& id,
                                           std::vector<Polka::Object*>& vec ) const
 {
@@ -1004,7 +954,7 @@ Storage& Project::createImportObjects( const std::string& name )
 	assert( m_pImportAction == 0 );
 
 	// create undo action for import storage information
-	m_pImportAction = &m_History.createAction( m_UndoProxy );
+	m_pImportAction = &m_History.createAction();
 	if( name.empty() ) {
 		m_pImportAction->setName( _("Import"));
 	} else {
@@ -1056,7 +1006,7 @@ void Project::finishImportObjects()
 	}
 	
 	// execute redo
-	m_UndoProxy.redo( ACTION_OBJECTS, s );
+	projectRedo( ACTION_OBJECTS, s );
 	
 	m_pImportAction = 0;
 }
@@ -1083,7 +1033,9 @@ Gtk::TreeModel::iterator Project::createObject( const Glib::ustring& location, c
 
 	// load data
 	Polka::Object *obj = (*newIt)[m_Cols.m_pObject];
+	obj->setInitMode();
 	obj->load( s );
+	obj->setInitMode(false);
 
 	// select row 
 	Gtk::TreeModel::Path path(newIt);
@@ -1114,7 +1066,25 @@ Gtk::TreeModel::iterator Project::createObject( Gtk::TreeModel::iterator locatio
 	// signal update to tree
 	m_SignalTreeUpdate.emit();
 	
+	newObj->setInitMode(false);
+	
 	return newIt;
+}
+
+guint32 Project::getNewFunid() const
+{
+	guint32 uid;
+	while(true) {
+		uid = g_random_int();
+		if( uid == 0 ) continue; // zero is reserved for project
+		std::list<Polka::Object*>::const_iterator it = m_Objects.begin();
+		while( it != m_Objects.end() ) { 
+			if( (*it)->funid() == uid ) break;
+			it++;
+		}
+		if( it == m_Objects.end() ) break;
+	}
+	return uid;
 }
 
 void Project::deleteLocation( const Glib::ustring& name )
@@ -1138,5 +1108,113 @@ void Project::deleteLocation( Gtk::TreeModel::iterator location )
 	// delete tree row
 	m_rpTreeModel->erase(location);
 }
+
+void Project::projectUndo( const std::string& id, Storage& s )
+{
+	projectUndoAction( id, s );
+}
+
+void Project::projectRedo( const std::string& id, Storage& s )
+{
+	projectUndoAction( id, s );
+}
+
+void Project::projectUndoAction( const std::string& action, Storage& s )
+{
+	if( action == ACTION_RENAME ) {
+
+		// get names
+		Glib::ustring fromName, toName;
+		if( s.findItem("NAMES") ) {
+			fromName = s.stringField(0);
+		} else if( s.findItem("NAME_ID") ) {
+			Polka::Object *obj = findObject( s.integerField(0) );
+			if(!obj) return;
+			fromName = obj->name();
+		} else {
+			return;
+		}
+		toName = s.stringField(1);
+		// rename the object
+		renameLocation( fromName, toName );
+
+	} else if( action == ACTION_COMMENTS ) {
+
+		// get names
+		if( s.findItem("COMMENTS") ) {
+			// find the object
+			Polka::Object *obj = findObject( s.integerField(0) );
+			if( obj ) {
+				Glib::ustring comments( s.stringField(1) );
+				obj->setComments( comments );
+			}
+		}
+
+	} else if( action == ACTION_CREATEFOLDER ) {
+
+		// get location and name
+		if( s.findItem("CREATE_FOLDER") ) {
+			Glib::ustring location( s.stringField(0) );
+			Glib::ustring name( s.stringField(1) );
+			// let project create named folder
+			createFolder( location, name );
+		}
+
+	} else if( action == ACTION_DELETE ) {
+
+		if( s.findItem("DELETE_NAME") ) {
+			Glib::ustring name( s.stringField(0) );
+			deleteLocation( name );
+		}
+
+	} else if( action  == ACTION_CREATE ) {
+
+		if( s.findItem("CREATE_EMPTY") ) {
+			std::string objtype( s.stringField(0) );
+			std::string location( s.stringField(1) );
+			std::string name( s.stringField(2) );
+			// let project create named folder
+			createNewObject( location, name, objtype );
+		}
+		
+	} else if( action  == ACTION_OBJECTS ) {
+
+		// read objects
+		bool readObjs = s.findObject();
+		while( readObjs ) {
+			const std::string& objtype = s.objectType();
+			Storage& objS = s.object();
+			// next object (do it now, so continue will work)
+			readObjs = s.findNextObject();		
+
+			// all objects have a name and location
+			if( !objS.findItem("OBJECT_NAME") ) continue;
+			Glib::ustring name = objS.stringField(0);
+
+			// object container
+			if( !objS.findItem("LOCATION") ) continue;
+			Glib::ustring location = objS.stringField(0);
+
+			createObject( location, name, objtype, objS );
+		}
+		
+	} else if( action == ACTION_MULTIPLE ) {
+
+		// read objects
+		bool readObjs = s.findObject();
+		while( readObjs ) {
+			const std::string& objtype = s.objectType();
+			Storage& objS = s.object();
+			
+			projectUndoAction( objtype, objS );
+
+			// next object
+			readObjs = s.findNextObject();		
+		}
+		
+	}
+}
+
+
 
 } // namespace Polka

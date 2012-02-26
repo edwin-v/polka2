@@ -33,6 +33,7 @@ public:
 
 	// object identification
 	const std::string& id() const;
+	guint32 funid() const;
 	const Glib::ustring& name() const;
 	const Glib::ustring& comments() const;
 	const std::string& dependencyType( int id ) const;
@@ -52,6 +53,8 @@ public:
 	// undo
 	virtual void undo( const std::string& id, Storage& s );
 	virtual void redo( const std::string& id, Storage& s );
+
+	void setInitMode( bool val = true );
 
 protected:
 	bool registerDependency( int id, const std::string& typespec );
@@ -73,11 +76,12 @@ private:
 	ConstObjectList m_UsedBy;
 	// object identification
 	std::string m_Id;
+	guint32 m_FUNID;
 	Glib::ustring m_Name;
 	Glib::ustring m_Comments;
 	// object state
 	Project& m_Project;
-	bool m_Dirty;
+	bool m_InitMode, m_Dirty;
 	bool m_AllowUpdateDelay;
 	// object editor
 	Editor *m_pEditor;
@@ -97,6 +101,12 @@ private:
 	friend class Editor;
 	// friend ObjectPropertiesDialog so it can display internal
 	friend class ObjectPropertiesDialog;
+	
+	// private undo entries
+	friend class UndoAction;
+	void objectUndo( const std::string& id, Storage& s );
+	void objectRedo( const std::string& id, Storage& s );
+	void objectStorageAction( Storage& s );
 };
 
 } // namespace Polka

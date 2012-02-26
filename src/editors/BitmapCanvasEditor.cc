@@ -1224,7 +1224,7 @@ bool BitmapCanvasEditor::penUpdate( guint mods )
  */
 bool BitmapCanvasEditor::penRelease( guint button, guint key )
 {
-	if( isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) ) {
+	if( m_DragPrimary && isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) >= 0 ) {
 		canvas().finishAction();
 		m_DragPrimary = false;
 		return true;
@@ -1338,7 +1338,7 @@ bool BitmapCanvasEditor::brushUpdate( guint mods )
  */
 bool BitmapCanvasEditor::brushRelease( guint button, guint key )
 {
-	if( isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) ) {
+	if( m_DragPrimary && isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) >= 0 ) {
 		canvas().finishAction();
 		m_DragPrimary = false;
 		return true;
@@ -1459,7 +1459,7 @@ bool BitmapCanvasEditor::chgColorUpdate( guint mods )
  */
 bool BitmapCanvasEditor::chgColorRelease( guint button, guint key )
 {
-	if( isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) ) {
+	if( m_DragPrimary && isAccel( {ACC_DRAW_FG, ACC_DRAW_BG}, button, key) >= 0 ) {
 		canvas().finishAction();
 		m_DragPrimary = false;
 		return true;

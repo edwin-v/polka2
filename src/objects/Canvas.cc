@@ -11,6 +11,10 @@
 
 namespace Polka {
 
+const char *PIXEL_ASPECT_ID = "PIXEL_ASPECT_RATIO";
+const char *RESIZE_ID = "RESIZE";
+const char *RESIZE_DATA_ITEM = "RESTORE_DATA";
+
 
 Canvas::Canvas( Project& _prj, const std::string& _id )
 	: Object(_prj, _id, true), m_pData(0), m_PixelHScale(1), m_PixelVScale(1)
@@ -176,21 +180,70 @@ bool Canvas::getClipped() const
 	return m_ClipX1 != 0 && m_ClipY1 != 0 && m_ClipX2 != m_pData->width()-1 && m_ClipY2 != m_pData->height()-1;
 }
 
-void Canvas::resize( int w, int h, int horscale, int verscale )
+void Canvas::resize( int w, int h, int horscale, int verscale, bool store_undo )
 {
+	//ResourceManager& rm = ResourceManager::get();
+	ObjectManager& om = ObjectManager::get();
 	bool mod = false;
 	if( m_pData->width() != w || m_pData->height() != h ) {
 		bool clipped = getClipped();
+		
+		if( store_undo ) {
+			// undo
+			UndoAction& action = project().undoHistory().createAction( *this );
+			action.setName( _("Resize canvas") );
+			action.setIcon( om.iconFromId(id()) );
+			// set redo action
+			Storage& su = action.setUndoData( RESIZE_ID );
+			su.createItem( RESIZE_ID, "II" );
+			su.setField( 0, m_pData->width() );
+			su.setField( 1, m_pData->height() );
+			// set redo action
+			Storage& sr = action.setRedoData( RESIZE_ID );
+			sr.createItem( RESIZE_ID, "II" );
+			sr.setField( 0, w );
+			sr.setField( 1, h );
+
+			if( w < m_pData->width() ) {
+				// store image data block 1
+				m_pData->storeRect( su.createObject(RESIZE_DATA_ITEM), Gdk::Rectangle( w, 0, m_pData->width() - w, m_pData->height() ) );
+			}
+			if( h < m_pData->height() ) {
+				// store image data block 2
+				m_pData->storeRect( su.createObject(RESIZE_DATA_ITEM), Gdk::Rectangle( 0, h, w, m_pData->height() - h ) );
+			}
+		}
+	
 		// modify data
 		m_pData->setSize(w, h);
 		m_Image.clear();
 		mod = true;
 		// modify clipping
 		if( !clipped ) setClipRectangle();
+		// undo
 	}
 	if( horscale != m_PixelHScale || verscale != m_PixelVScale ) {
+
+		if( store_undo ) {
+			// undo
+			UndoAction& action = project().undoHistory().createAction( *this );
+			action.setName( _("Change pixel ratio") );
+			action.setIcon( om.iconFromId(id()) );
+			// create undo data block
+			Storage& su = action.setUndoData( PIXEL_ASPECT_ID );
+			su.createItem( PIXEL_ASPECT_ID, "II" );
+			su.setField( 0, m_PixelHScale );
+			su.setField( 1, m_PixelVScale );
+			// set redo action
+			Storage& sr = action.setRedoData( PIXEL_ASPECT_ID );
+			sr.createItem( PIXEL_ASPECT_ID, "II" );
+			sr.setField( 0, horscale );
+			sr.setField( 1, verscale );
+		}
+
 		m_PixelHScale = horscale;
 		m_PixelVScale = verscale;
+
 		mod = true;
 	}
 	if( mod ) update();
@@ -438,17 +491,33 @@ bool Canvas::addChangedRect( const Gdk::Rectangle& rect )
 
 void Canvas::undo( const std::string& id, Storage& s )
 {
-	if( id == "RECT" ) { 
-		m_UpdateRect = m_pData->restoreRect( s );
-		update(false);
-	}
+	undoAction( id, s );
 }
 
 void Canvas::redo( const std::string& id, Storage& s )
 {
+	undoAction( id, s );
+}
+
+void Canvas::undoAction( const std::string& id, Storage& s )
+{
 	if( id == "RECT" )  {
 		m_UpdateRect = m_pData->restoreRect( s );
 		update(false);
+	} else if( id == RESIZE_ID ) {
+		if( s.findItem( RESIZE_ID ) ) {
+			resize( s.integerField(0), s.integerField(1) );
+			if( s.findObject(RESIZE_DATA_ITEM) )
+				do {
+					m_pData->restoreRect( s.object() );
+				} while( s.findNextObject(RESIZE_DATA_ITEM) );
+			update();
+		}
+	} else if( id == PIXEL_ASPECT_ID ) {
+		if( s.findItem( PIXEL_ASPECT_ID ) ) {
+			resize( m_pData->width(), m_pData->height(), s.integerField(0), s.integerField(1) );
+			update();
+		}
 	}
 }
 

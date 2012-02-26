@@ -5,6 +5,7 @@ namespace Polka {
 	
 // action names
 const char *ACTION_RENAME = "rename";
+const char *ACTION_COMMENTS = "comments";
 const char *ACTION_CREATE = "create";
 const char *ACTION_OBJECTS = "objects";
 const char *ACTION_CREATEFOLDER = "folder";
@@ -18,6 +19,20 @@ void storageRename( Storage& s, const Glib::ustring& from, const Glib::ustring& 
 	s.createItem("NAMES", "SS");
 	s.setField( 0, from );
 	s.setField( 1, to );
+}
+
+void storageRename( Storage& s, guint32 oid, const Glib::ustring& to )
+{
+	s.createItem("NAME_ID", "IS");
+	s.setField( 0, int(oid) );
+	s.setField( 1, to );
+}
+
+void storageComments( Storage& s, guint32 oid, const Glib::ustring& comments )
+{
+	s.createItem("COMMENTS", "IS");
+	s.setField( 0, int(oid) );
+	s.setField( 1, comments );
 }
 
 void storageSetRect( Storage& s, const std::string& name, const Gdk::Rectangle& rect )

@@ -24,7 +24,7 @@ public:
 	Storage& setRedoData( std::string id );
 
 	// access to identifiers
-	const Glib::ustring& source() const;
+	guint32 sourceId() const;
 	const Glib::ustring& name() const;
 	const Glib::RefPtr<Gdk::Pixbuf> icon() const;
 
@@ -35,9 +35,9 @@ public:
 	Storage& redoData();
 
 protected:	
-	UndoAction( UndoHistory& hist, Polka::Object& source );
+	UndoAction( UndoHistory& hist, guint32 source );
 	UndoAction( UndoHistory& hist );
-	~UndoAction();
+	virtual ~UndoAction();
 
 	virtual void undo( Project& project );
 	virtual void redo( Project& project );
@@ -48,7 +48,7 @@ private:
 
 	Glib::ustring m_Name;
 	UndoHistory& m_History;
-	Glib::ustring m_Source;
+	guint32 m_SourceId;
 	Glib::RefPtr<Gdk::Pixbuf> m_refIcon;
 
 	std::string m_UndoId, m_RedoId;

@@ -17,6 +17,7 @@ public:
 	bool getFileIdentification( const std::string& id );
 	int versionMajor() const;
 	int versionMinor() const;
+	int version() const;
 
 	// main entries
 	int load();

@@ -1,6 +1,7 @@
 #include "ObjectPropertiesDialog.h"
 #include "ObjectPropertySheet.h"
 #include "Object.h"
+#include "Project.h"
 #include "ObjectManager.h"
 #include <glibmm/i18n.h>
 #include <gtkmm/stock.h>
@@ -124,14 +125,23 @@ ObjectPropertiesDialog::~ObjectPropertiesDialog()
 
 void ObjectPropertiesDialog::on_response( int id )
 {
+	if( !m_InfoChanged && !m_PropertiesChanged ) return;
 	if( id == Gtk::RESPONSE_OK ) {
+		// init undo group
+		m_Object.project().undoHistory().openActionGroup( _("Change properties"), ObjectManager::get().iconFromId( m_Object.id() ) );
+
 		// rename object through project (for undo)
 		if( m_InfoChanged ) {
-			m_Object.setComments( m_CommentsText.get_buffer()->get_text() );
+			m_Object.project().setObjectName( m_Object, m_NameEntry.get_text() );
+			m_Object.project().setObjectComments( m_Object, m_CommentsText.get_buffer()->get_text() );
 		}
 		// apply settings through custom widget
 		if( m_PropertiesChanged )
 			m_pProperties->apply();
+
+		// close undo group
+		m_Object.project().undoHistory().closeActionGroup();
+
 	} else
 		m_pProperties->reset();
 }

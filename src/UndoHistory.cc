@@ -15,7 +15,7 @@ class UndoActionGroup : public UndoAction
 {
 public:
 	UndoActionGroup( UndoHistory& hist );
-	~UndoActionGroup();
+	virtual ~UndoActionGroup();
 
 	void add( UndoAction *action );
 
@@ -26,6 +26,11 @@ protected:
 private:
 	std::vector<UndoAction*> m_Actions;
 };
+
+
+/*
+ * UndoHistory implementation
+ */
 
 
 UndoHistory::UndoHistory( Project& project )
@@ -76,7 +81,12 @@ void UndoHistory::clearRedoHistory( unsigned int num_remain )
 UndoAction& UndoHistory::createAction( Object& object )
 {
 	assert( &object.project() == &m_Project );
-	return *(new UndoAction( *this, object ));
+	return *(new UndoAction( *this, object.funid() ));
+}
+
+UndoAction& UndoHistory::createAction()
+{
+	return *(new UndoAction( *this, 0 ));
 }
 
 void UndoHistory::openActionGroup( Glib::ustring name, Glib::RefPtr<Gdk::Pixbuf> icon )
@@ -98,6 +108,10 @@ void UndoHistory::closeActionGroup()
 
 void UndoHistory::registerAction( UndoAction* action )
 {
+	// redo invalid now, clear
+	if( m_RedoActions.size() )
+		clearRedoHistory();
+
 	// add to undo history
 	if( m_Grouped ) {
 		UndoActionGroup *ag = dynamic_cast<UndoActionGroup *>(m_UndoActions.back());
@@ -107,10 +121,6 @@ void UndoHistory::registerAction( UndoAction* action )
 		m_UndoActions.push_back( action );
 		m_SignalHistoryChanged.emit( CHANGE_ADDUNDO );	
 	}
-	
-	// redo invalid now, clear
-	if( m_RedoActions.size() )
-		clearRedoHistory();
 }
 
 void UndoHistory::displayChange( UndoAction *action )

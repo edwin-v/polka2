@@ -2,16 +2,29 @@
 #include "Editor.h"
 #include "Project.h"
 #include "Functions.h"
+#include "ResourceManager.h"
+#include <glibmm/i18n.h>
 #include <assert.h>
 #include <algorithm>
 #include <iostream>
 
 
 namespace Polka {
-	
+
+
+const char* DEP_ID = "DEPENDENCY";
+const char* DEP_CREATE_ITEM = "CREATE_DEPENDENCY";
+const char* DEP_CHANGE_ITEM = "CHANGE_DEPENDENCY";
+const char* DEP_REMOVE_ITEM = "REMOVE_DEPENDENCY";
+const char* DEP_ITEM_TYPE = "IS";
+const char* DEP_ITEMID_TYPE = "I";
+
+
 Object::Object( Project& _prj, const std::string& _id, bool delayed_update )
-	: m_Id( _id ), m_Project( _prj ), m_Dirty(true), m_AllowUpdateDelay(delayed_update), m_pEditor(0)
+	: m_Id( _id ), m_Project( _prj ), m_InitMode(true), m_Dirty(true),
+	  m_AllowUpdateDelay(delayed_update), m_pEditor(0)
 {
+	m_FUNID = _prj.getNewFunid();
 }
 
 Object::~Object()
@@ -38,6 +51,17 @@ Object::~Object()
 const std::string& Object::id() const
 {
 	return m_Id;
+}
+
+/**
+ * 
+ * Returns the object fixed and unique numerical identifier.
+ * 
+ * @return the object type ID string
+ */
+guint32 Object::funid() const
+{
+	return m_FUNID;
 }
 
 /**
@@ -154,6 +178,24 @@ bool Object::registerDependency( int id, const std::string& typespec )
 	// get dependency
 	Object *obj = m_Project.findObjectOfTypes(typespec);
 	if( !obj ) return false;
+
+	if( !m_InitMode ) {
+		// create undo
+		UndoAction& action = project().undoHistory().createAction( *this );
+		action.setName( m_Name + _("dependency created") );
+		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
+		Storage& su = action.setUndoData( DEP_ID );
+		su.createItem( DEP_REMOVE_ITEM, DEP_ITEMID_TYPE );
+		su.setField( 0, id );
+		// add redo data
+		Storage &sr = action.setRedoData( DEP_ID );
+		sr.createItem( DEP_CREATE_ITEM, DEP_ITEM_TYPE );
+		sr.setField( 0, id );
+		sr.setField( 1, typespec );
+		sr.createItem( DEP_CHANGE_ITEM, DEP_ITEM_TYPE );
+		sr.setField( 0, id );
+		sr.setField( 1, obj->name() );
+	}
 	
 	m_Dependencies[id].type = typespec;
 	m_Dependencies[id].object = obj;
@@ -181,6 +223,24 @@ bool Object::unregisterDependency( int id )
 	// unregister from this dependency
 	Object& obj = *const_cast<Object*>(it->second.object);
 	obj.unsetDependencyOf(this);
+
+	if( !m_InitMode ) {
+		// create undo
+		UndoAction& action = project().undoHistory().createAction( *this );
+		action.setName( m_Name + _("dependency removed") );
+		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
+		Storage& su = action.setUndoData( DEP_ID );
+		su.createItem( DEP_CREATE_ITEM, DEP_ITEM_TYPE );
+		su.setField( 0, id );
+		su.setField( 1, it->second.type );
+		su.createItem( DEP_CHANGE_ITEM, DEP_ITEM_TYPE );
+		su.setField( 0, id );
+		su.setField( 1, it->second.object->name() );
+		// add redo data
+		Storage &sr = action.setRedoData( DEP_ID );
+		sr.createItem( DEP_REMOVE_ITEM, DEP_ITEMID_TYPE );
+		sr.setField( 0, id );
+	}
 	
 	// remove the dependecy
 	m_Dependencies.erase(it);
@@ -197,7 +257,7 @@ bool Object::unregisterDependency( int id )
  * @return #FALSE if the change failed
  */
 bool Object::setDependency( int id, const Object *object )
-{
+{ std::cout << "setdep init: " << m_InitMode << std::endl;
 	// check if dependency id exists
 	auto it = m_Dependencies.find(id);
 	if( it == m_Dependencies.end() )
@@ -217,6 +277,22 @@ bool Object::setDependency( int id, const Object *object )
 	Object& robj = *const_cast<Object*>(object);
 	robj.setDependencyOf(this);
 	it->second.object = object;
+
+	if( !m_InitMode ) {
+		// create undo
+		UndoAction& action = project().undoHistory().createAction( *this );
+		action.setName( m_Name + _("dependency changed") );
+		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
+		Storage& su = action.setUndoData( DEP_ID );
+		su.createItem( DEP_CHANGE_ITEM, DEP_ITEM_TYPE );
+		su.setField( 0, id );
+		su.setField( 1, uobj.name() );
+		// add redo data
+		Storage &sr = action.setRedoData( DEP_ID );
+		sr.createItem( DEP_CHANGE_ITEM, DEP_ITEM_TYPE );
+		sr.setField( 0, id );
+		sr.setField( 1, robj.name() );
+	}
 	
 	return true;
 }
@@ -359,6 +435,18 @@ void Object::forceUpdate()
 	}
 }
 
+/**
+ * Turns init mode on or off. When init mode is turned on, certain
+ * automated responsed won't be executed. These include automated
+ * generation of undo events.
+ * 
+ * @param val set true to turn init mode on and false to turn it off.
+ */
+void Object::setInitMode( bool val )
+{
+	m_InitMode = val;
+}
+
 void Object::setDirty()
 {
 	// set self dirty
@@ -387,6 +475,9 @@ int Object::save( Storage& s )
 	// create comments
 	s.createItem("COMMENTS", "S");
 	s.setField( 0, m_Comments );
+	// store unique id
+	s.createItem("UNIQUE_ID", "I");
+	s.setField( 0, gint32(m_FUNID) );
 	// save object data
 	return store(s);
 }
@@ -394,6 +485,16 @@ int Object::save( Storage& s )
 int Object::load( Storage& s )
 {
 	// name is already loaded, continue with others
+	if( s.version() >= 2 ) {
+		// require unique id
+		if( !s.findItem("UNIQUE_ID") ) return Storage::EINVALIDDATA;
+		if( !s.checkFormat("I") ) return Storage::EINVALIDDATA;
+		m_FUNID = s.integerField(0);
+	} else {
+		// generate unique id
+		m_FUNID = m_Project.getNewFunid();
+	}
+	// required id availabe
 	if( s.findItem("COMMENTS") ) {
 		if( s.checkFormat("S") ) {
 			m_Comments = s.stringField(0);
@@ -438,6 +539,52 @@ void Object::undo( const std::string& /*id*/, Storage& /*s*/ )
 void Object::redo( const std::string& /*id*/, Storage& /*s*/ )
 {
 	// implement in derived class if relevant
+}
+
+void Object::objectUndo( const std::string& id, Storage& s )
+{
+	if( id == DEP_ID ) 
+		objectStorageAction( s );
+	else
+		undo( id, s );
+}
+
+void Object::objectRedo( const std::string& id, Storage& s )
+{
+	if( id == DEP_ID ) 
+		objectStorageAction( s );
+	else
+		redo( id, s );
+}
+
+void Object::objectStorageAction( Storage& s )
+{
+	bool upd = false, init = m_InitMode;
+	// no undo generation
+	m_InitMode = true;
+
+	// first try create item
+	if( s.findItem( DEP_CREATE_ITEM ) ) {
+		registerDependency( s.integerField(0), s.stringField(1) );
+		upd = true;
+	}
+	// then try change item
+	if( s.findItem( DEP_CHANGE_ITEM ) ) {
+		Object *obj = m_Project.findObject( s.stringField(1) );
+		if( obj ) {
+			// change dependency
+			setDependency( s.integerField(0), obj );
+			upd = true;
+		}
+	}
+	// and lastly delete
+	if( s.findItem( DEP_REMOVE_ITEM ) ) {
+		unregisterDependency( s.integerField(0) );
+		upd = true;
+	}
+	if( upd ) update();
+	
+	m_InitMode = init;
 }
 
 
