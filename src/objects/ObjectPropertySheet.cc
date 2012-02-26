@@ -2,12 +2,18 @@
 
 namespace Polka {
 
-ObjectPropertySheet::ObjectPropertySheet()
+ObjectPropertySheet::ObjectPropertySheet( const Glib::ustring& _name )
+	: m_Name(_name)
 {
 }
 
 ObjectPropertySheet::~ObjectPropertySheet()
 {
+}
+
+const Glib::ustring& ObjectPropertySheet::pageName() const
+{
+	return m_Name;
 }
 
 ObjectPropertySheet::SignalSetModified ObjectPropertySheet::signalSetModified()

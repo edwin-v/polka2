@@ -38,12 +38,13 @@ ObjectPropertiesDialog::ObjectPropertiesDialog( Polka::Object& obj_ )
 	m_CommentsText.set_wrap_mode( Gtk::WRAP_WORD_CHAR );
 	m_CommentsText.get_buffer()->signal_changed().connect( sigc::mem_fun(*this, &ObjectPropertiesDialog::setInfoChanged ) );
 	
-	// create properties tab
-	m_pProperties = ObjectManager::get().createObjectPropertySheet( obj_ );
-	if(m_pProperties) {	
-		manage(m_pProperties);
-		m_pProperties->signalSetModified().connect(
+	// create object property tabs
+	ObjectPropertySheet *props;
+	while( (props = ObjectManager::get().createObjectPropertySheet( obj_, m_ObjectPropertyTabs.size() )) ) {
+		manage(props);
+		props->signalSetModified().connect(
 			sigc::mem_fun(*this, &ObjectPropertiesDialog::setPropertiesChanged ) );
+		m_ObjectPropertyTabs.push_back(props);
 	}
 
 	// links
@@ -100,7 +101,10 @@ ObjectPropertiesDialog::ObjectPropertiesDialog( Polka::Object& obj_ )
 	
 	// fill notebook
 	m_Tabs.append_page( m_MainBox, _("Info") );
-	if( m_pProperties ) m_Tabs.append_page( *m_pProperties, _("Properties") );
+	for( unsigned int i = 0; i < m_ObjectPropertyTabs.size(); i++ ) {
+		ObjectPropertySheet *ptab = m_ObjectPropertyTabs[i];
+		m_Tabs.append_page( *ptab, ptab->pageName() );
+	}
 	m_Tabs.append_page( m_LinksBox, _("Links") );
 	
 	// add buttons
@@ -137,13 +141,15 @@ void ObjectPropertiesDialog::on_response( int id )
 		}
 		// apply settings through custom widget
 		if( m_PropertiesChanged )
-			m_pProperties->apply();
+			for( unsigned int i = 0; i < m_ObjectPropertyTabs.size(); i++ )
+				m_ObjectPropertyTabs[i]->apply();
 
 		// close undo group
 		m_Object.project().undoHistory().closeActionGroup();
 
 	} else
-		m_pProperties->reset();
+		for( unsigned int i = 0; i < m_ObjectPropertyTabs.size(); i++ )
+		m_ObjectPropertyTabs[i]->reset();
 }
 
 void ObjectPropertiesDialog::setInfoChanged()

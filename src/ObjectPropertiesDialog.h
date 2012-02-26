@@ -6,7 +6,7 @@
 #include <gtkmm/frame.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/textview.h>
-
+#include <vector>
 
 namespace Polka {
 
@@ -33,8 +33,8 @@ private:
 	Gtk::Entry m_NameEntry;
 	Gtk::Label m_CommentsLabel;
 	Gtk::TextView m_CommentsText;
-	// properties tab widget
-	ObjectPropertySheet *m_pProperties;
+	// properties tab widgets
+	std::vector<ObjectPropertySheet*> m_ObjectPropertyTabs;
 	// links
 	Gtk::VBox m_LinksBox;
 	Gtk::Label    m_UsesLabel;

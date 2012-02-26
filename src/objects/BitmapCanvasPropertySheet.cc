@@ -32,14 +32,14 @@ static const Template Templates[] = {
 static const int NumTemplates = sizeof(Templates)/sizeof(Template);
 
 BitmapCanvasPropertySheet::BitmapCanvasPropertySheet( Canvas& canvas )
-	: m_Canvas( canvas ), m_Square( _("Square") ), m_High( _("High 1:2") ),
-	  m_Wide( _("Wide 2:1") )
+	: ObjectPropertySheet( _("Properties") ), m_Canvas( canvas ), 
+	  m_Square( _("Square") ), m_High( _("High 1:2") ), m_Wide( _("Wide 2:1") )
 {
 	set_border_width(12);
 	set_spacing(12);
 	// templates
 	Gtk::Box *box = manage( new Gtk::HBox );
-	Gtk::Label *l = manage( new Gtk::Label( _("Template:") ) );
+	Gtk::Label *l = manage( new Gtk::Label( _("Template:"), 0.0, 0.5 ) );
 	box->set_spacing(12);
 	box->pack_start( *l, Gtk::PACK_SHRINK );
 	box->pack_start( m_Templates );
@@ -52,10 +52,10 @@ BitmapCanvasPropertySheet::BitmapCanvasPropertySheet( Canvas& canvas )
 	t->set_col_spacings(12);
 	f->add(*t);
 	
-	l = manage( new Gtk::Label( _("Width:") ) );
-	t->attach( *l, 0, 1, 0, 1, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
-	l = manage( new Gtk::Label( _("Height:") ) );
-	t->attach( *l, 0, 1, 1, 2, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
+	l = manage( new Gtk::Label( _("Width:"), 0.0, 0.5 ) );
+	t->attach( *l, 0, 1, 0, 1, Gtk::FILL, Gtk::SHRINK, 0, 4 );
+	l = manage( new Gtk::Label( _("Height:"), 0.0, 0.5 ) );
+	t->attach( *l, 0, 1, 1, 2, Gtk::FILL, Gtk::SHRINK, 0, 4 );
 	t->attach( m_Width,  1, 2, 0, 1, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
 	t->attach( m_Height, 1, 2, 1, 2, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
 
@@ -211,6 +211,112 @@ void BitmapCanvasPropertySheet::apply() const
 }
 
 void BitmapCanvasPropertySheet::reset() const
+{
+	// no action needed
+}
+
+
+
+/*
+ * ---------------------
+ * BitmapCanvasGridSheet
+ * ---------------------
+ */
+
+BitmapCanvasGridSheet::BitmapCanvasGridSheet( Canvas& canvas )
+	: ObjectPropertySheet( _("Grid") ), m_Canvas( canvas )
+{
+	set_border_width(12);
+	set_spacing(12);
+
+	// create size frame
+	HIGFrame *f = manage( new HIGFrame( _("Grid Size") ));
+	pack_start(*f, Gtk::PACK_SHRINK);
+	// create size editor
+	Gtk::Table *t = manage( new Gtk::Table(2, 2) );
+	t->set_col_spacings(12);
+	f->add(*t);
+	
+	Gtk::Label *l = manage( new Gtk::Label( _("Horizontal:"), 0.0, 0.5 ) );
+	t->attach( *l, 0, 1, 0, 1, Gtk::FILL, Gtk::SHRINK, 0, 4 );
+	l = manage( new Gtk::Label( _("Vertical:"), 0.0, 0.5 ) );
+	t->attach( *l, 0, 1, 1, 2, Gtk::FILL, Gtk::SHRINK, 0, 4 );
+	t->attach( m_HSize,  1, 2, 0, 1, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
+	t->attach( m_VSize, 1, 2, 1, 2, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
+
+	// create offset frame
+	f = manage( new HIGFrame( _("Grid Offset") ));
+	pack_start(*f, Gtk::PACK_SHRINK);
+
+	// create offset editor
+	t = manage( new Gtk::Table(2, 2) );
+	t->set_col_spacings(12);
+	f->add(*t);
+	
+	l = manage( new Gtk::Label( _("Horizontal:"), 0.0, 0.5 ) );
+	t->attach( *l, 0, 1, 0, 1, Gtk::FILL, Gtk::SHRINK, 0, 4 );
+	l = manage( new Gtk::Label( _("Vertical:"), 0.0, 0.5 ) );
+	t->attach( *l, 0, 1, 1, 2, Gtk::FILL, Gtk::SHRINK, 0, 4 );
+	t->attach( m_HOffset,  1, 2, 0, 1, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
+	t->attach( m_VOffset, 1, 2, 1, 2, Gtk::SHRINK, Gtk::SHRINK, 0, 4 );
+
+	m_HSize.set_increments( 1, 8 );
+	m_VSize.set_increments( 1, 8 );
+	m_HOffset.set_increments( 1, 2 );
+	m_VOffset.set_increments( 1, 2 );
+
+	initObject();
+	
+	m_HSize.signal_changed().connect( sigc::mem_fun(*this, &BitmapCanvasGridSheet::checkChanges) );
+	m_VSize.signal_changed().connect( sigc::mem_fun(*this, &BitmapCanvasGridSheet::checkChanges) );
+	m_HOffset.signal_changed().connect( sigc::mem_fun(*this, &BitmapCanvasGridSheet::checkChanges) );
+	m_VOffset.signal_changed().connect( sigc::mem_fun(*this, &BitmapCanvasGridSheet::checkChanges) );
+	
+	show_all_children();
+}
+
+BitmapCanvasGridSheet::~BitmapCanvasGridSheet()
+{
+}
+
+void BitmapCanvasGridSheet::initObject()
+{ 
+	m_HSize.set_range( 0, m_Canvas.width() );
+	m_VSize.set_range( 0, m_Canvas.height() );
+	m_HOffset.set_range( 0, m_Canvas.tileGridWidth()-1 );
+	m_VOffset.set_range( 0, m_Canvas.tileGridHeight()-1 );
+
+	m_HSize.set_value( m_Canvas.tileGridWidth() );
+	m_VSize.set_value( m_Canvas.tileGridHeight() );
+	m_HOffset.set_value( m_Canvas.tileGridHorOffset() );
+	m_VOffset.set_value( m_Canvas.tileGridVerOffset() );
+}
+
+void BitmapCanvasGridSheet::checkChanges()
+{
+	bool changed = false;
+	// limit offset
+	m_HOffset.set_range( 0, m_HSize.get_value_as_int()-1 );
+	m_VOffset.set_range( 0, m_VSize.get_value_as_int()-1 );
+	// check size
+	changed |= ( m_HSize.get_value_as_int() != m_Canvas.tileGridWidth() );
+	changed |= ( m_VSize.get_value_as_int() != m_Canvas.tileGridHeight() );
+	// check offset
+	changed |= ( m_HOffset.get_value_as_int() != m_Canvas.tileGridHorOffset() );
+	changed |= ( m_VOffset.get_value_as_int() != m_Canvas.tileGridVerOffset() );
+	
+	setModified( changed );
+}
+
+void BitmapCanvasGridSheet::apply() const
+{
+	m_Canvas.setTileGrid( m_HSize.get_value_as_int(), 
+	                      m_VSize.get_value_as_int(), 
+	                      m_HOffset.get_value_as_int(), 
+	                      m_VOffset.get_value_as_int() );
+}
+
+void BitmapCanvasGridSheet::reset() const
 {
 	// no action needed
 }

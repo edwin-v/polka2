@@ -78,7 +78,7 @@ bool ObjectManager::ObjectFactory::canCreate( const Project& /*project*/ ) const
 	return true;
 }
 
-ObjectPropertySheet *ObjectManager::ObjectFactory::createPropertySheet( Polka::Object& /*_obj*/ ) const
+ObjectPropertySheet *ObjectManager::ObjectFactory::createPropertySheet( Polka::Object& /*_obj*/, int /*nr*/ ) const
 {
 	// default is no property sheet
 	return 0;
@@ -322,11 +322,11 @@ bool ObjectManager::canCreateObject( const std::string& id, const Project& prj )
 	return of->canCreate(prj);
 }
 
-ObjectPropertySheet *ObjectManager::createObjectPropertySheet( Polka::Object& obj )
+ObjectPropertySheet *ObjectManager::createObjectPropertySheet( Polka::Object& obj, int nr )
 {
 	const ObjectFactory *of = objectFactoryFromId( obj.id() );
 	if( of )
-		return of->createPropertySheet(obj);
+		return of->createPropertySheet(obj, nr);
 	else
 		return 0;
 }

@@ -14,6 +14,7 @@ namespace Polka {
 const char *PIXEL_ASPECT_ID = "PIXEL_ASPECT_RATIO";
 const char *RESIZE_ID = "RESIZE";
 const char *RESIZE_DATA_ITEM = "RESTORE_DATA";
+const char *GRID_ID = "GRID_SIZE";
 
 
 Canvas::Canvas( Project& _prj, const std::string& _id )
@@ -87,18 +88,38 @@ int Canvas::tileGridVerOffset() const
 
 void Canvas::setTileGrid( int width, int height, int hor_offset, int ver_offset )
 {
-	if( width >= 0 )
-		m_TileGridWidth = width;
-	if( height >= 0 )
-		m_TileGridHeight = height;
-	if( hor_offset >= 0 )
-		m_TileGridOffsetH = hor_offset;
-	if( ver_offset >= 0 )
-		m_TileGridOffsetV = ver_offset;
-	
-	// correct offsets
-	m_TileGridOffsetH %= m_TileGridWidth;
-	m_TileGridOffsetV %= m_TileGridHeight;
+	// limit offsets
+	hor_offset %= width;
+	ver_offset %= height;
+	// changes?
+	if( m_TileGridWidth  == width &&
+		m_TileGridHeight == height &&
+		m_TileGridOffsetH == hor_offset &&
+		m_TileGridOffsetV == ver_offset ) return;
+
+	// undo
+	UndoAction& action = project().undoHistory().createAction( *this );
+	action.setName( _("Change grid") );
+	action.setIcon( ObjectManager::get().iconFromId(id()) );
+	// create undo data block
+	Storage& su = action.setUndoData( GRID_ID );
+	su.createItem( GRID_ID, "IIII" );
+	su.setField( 0, m_TileGridWidth );
+	su.setField( 1, m_TileGridHeight );
+	su.setField( 2, m_TileGridOffsetH );
+	su.setField( 3, m_TileGridOffsetV );
+	// set redo action
+	Storage& sr = action.setRedoData( GRID_ID );
+	sr.createItem( GRID_ID, "IIII" );
+	sr.setField( 0, width );
+	sr.setField( 1, height );
+	sr.setField( 2, hor_offset );
+	sr.setField( 3, ver_offset );
+
+	m_TileGridWidth = width;
+	m_TileGridHeight = height;
+	m_TileGridOffsetH = hor_offset;
+	m_TileGridOffsetV = ver_offset;
 }
 
 int Canvas::viewScale() const
@@ -516,6 +537,14 @@ void Canvas::undoAction( const std::string& id, Storage& s )
 	} else if( id == PIXEL_ASPECT_ID ) {
 		if( s.findItem( PIXEL_ASPECT_ID ) ) {
 			resize( m_pData->width(), m_pData->height(), s.integerField(0), s.integerField(1) );
+			update();
+		}
+	} else if( id == GRID_ID ) {
+		if( s.findItem( GRID_ID ) ) {
+			m_TileGridWidth   = s.integerField(0);
+			m_TileGridHeight  = s.integerField(1);
+			m_TileGridOffsetH = s.integerField(2);
+			m_TileGridOffsetV = s.integerField(3);
 			update();
 		}
 	}

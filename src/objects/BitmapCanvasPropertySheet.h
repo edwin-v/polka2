@@ -33,6 +33,24 @@ private:
 	void checkChanges();
 };
 
+class BitmapCanvasGridSheet: public ObjectPropertySheet
+{
+public:
+	BitmapCanvasGridSheet( Canvas& canvas );
+	~BitmapCanvasGridSheet();
+
+	// actions
+	virtual void apply() const;
+	virtual void reset() const;
+
+private:
+	Canvas& m_Canvas;
+	Gtk::SpinButton m_HSize, m_VSize, m_HOffset, m_VOffset;
+
+	void initObject();
+	void checkChanges();
+};
+
 } // namespace Polka
 
 #endif // _POLKA_BITMAPCANVASPROPERTYSHEET_H_

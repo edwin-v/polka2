@@ -40,7 +40,7 @@ public:
 		virtual ~ObjectFactory();
 		virtual bool canCreate( const Project& project ) const;
 		virtual Object *create( Project& _prj ) const = 0;
-		virtual ObjectPropertySheet *createPropertySheet( Polka::Object& _obj ) const;
+		virtual ObjectPropertySheet *createPropertySheet( Polka::Object& _obj, int nr ) const;
 		virtual const Glib::ustring& name() const;
 		virtual const Glib::ustring& location() const;
 		virtual const std::string& locationId() const;
@@ -101,7 +101,7 @@ public:
 	void hideEditors();
 	bool canCreateObject( const std::string& id, const Project& prj ) const;
 
-	ObjectPropertySheet *createObjectPropertySheet( Polka::Object& obj );
+	ObjectPropertySheet *createObjectPropertySheet( Polka::Object& obj, int nr );
 
 private:
 	ObjectManager();

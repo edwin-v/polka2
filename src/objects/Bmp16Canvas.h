@@ -4,16 +4,11 @@
 #include "Canvas.h"
 #include "Project.h"
 #include "ObjectManager.h"
-#include "BitmapCanvasPropertySheet.h"
-#include <glibmm/i18n.h>
-#include <cairomm/surface.h>
 
 namespace Polka {
 
 class Palette;
 class ObjectPropertySheet;
-
-static const char *DEP_PAL_TYPES = "PAL1,PAL2,PAL9";
 
 class Bmp16Canvas : public Polka::Canvas 
 {
@@ -27,16 +22,11 @@ private:
 class Bmp16CanvasFactory : public ObjectManager::ObjectFactory
 {
 public:
-	Bmp16CanvasFactory()
-		: ObjectManager::ObjectFactory( _("16 Colour Canvas"),
-		                                _("Sketch canvasses"), "0020CANV",
-		                                _("Canvas for sketching 16 colour graphics using a palette. Usable for Screen 5 mode and V9990 P1 and B modes."),
-		                                "BMP16CANVAS", "CANVASEDIT",
-		                                "object_sketch16" ) {}
+	Bmp16CanvasFactory();
 
-	bool canCreate( Project& _prj ) const { return _prj.findObjectOfTypes(DEP_PAL_TYPES) != 0; }
-	Object *create( Project& _prj ) const { return new Bmp16Canvas(_prj); }
-	ObjectPropertySheet *createPropertySheet( Object& _obj ) const { return new BitmapCanvasPropertySheet( dynamic_cast<Canvas&>(_obj) ); }
+	bool canCreate( Project& _prj ) const;
+	Object *create( Project& _prj ) const;
+	ObjectPropertySheet *createPropertySheet( Object& _obj, int nr ) const;
 };
 
 } // namespace Polka

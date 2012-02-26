@@ -10,8 +10,10 @@ class Canvas;
 class ObjectPropertySheet: public Gtk::VBox
 {
 public:
-	ObjectPropertySheet();
+	ObjectPropertySheet( const Glib::ustring& _name );
 	virtual ~ObjectPropertySheet();
+
+	const Glib::ustring& pageName() const;
 
 	// signals
 	typedef sigc::signal<void, bool> SignalSetModified;
@@ -26,7 +28,7 @@ protected:
 
 private:
 	SignalSetModified m_SignalSetModified;
-
+	Glib::ustring m_Name;
 };
 
 } // namespace Polka
