@@ -4,6 +4,7 @@
 #include "PreferencesDialog.h"
 #include "Settings.h"
 #include "ImportManager.h"
+#include "ResourceManager.h"
 #include <glibmm/i18n.h>
 #include <gtkmm/label.h>
 #include <gtkmm/spinbutton.h>
@@ -21,7 +22,7 @@ MainWindow::MainWindow()
 	: m_pProject(0), m_EditorMenuId(0)
 {
 	set_title("Polka 2");
-	
+	set_icon( ResourceManager::get().getIcon("p2icon_48") );
 	add(m_MainBox);
 	
 	// build the menus and toolbars
