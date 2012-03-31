@@ -64,7 +64,14 @@ bool checkObjectType( const std::string& type, const std::string& typespec )
 {
 	std::vector<std::string> reqs = split( typespec, ',' );
 	for( std::vector<std::string>::iterator it = reqs.begin(); it != reqs.end(); ++it ) {
-		if( type == trim(*it) ) return true;
+		*it = trim(*it);
+		int sz = it->size();
+		bool cat = it->at(sz-1) == '/';
+		if( cat ) {
+			if( type.compare(0, sz, *it) == 0 ) return true;
+		} else {
+			if( type == *it ) return true;
+		}
 	}
 	return false;
 }

@@ -280,7 +280,7 @@ void CanvasEditor::assignObject( Polka::Object *obj )
 		set_sensitive();
 		// set valid drag destination targets 
 		std::vector<Gtk::TargetEntry> dragTargets;
-		std::vector<std::string> types = split( obj->dependencyType(DEP_PAL), ',' );
+		std::vector<std::string> types = ObjectManager::get().expandTypeIds( obj->dependencyType(DEP_PAL) );
 		for( unsigned int i = 0; i < types.size(); i++ )
 			dragTargets.push_back( Gtk::TargetEntry( MIME_OBJNAME + types[i]) );
 		drag_dest_set( dragTargets, Gtk::DEST_DEFAULT_ALL, Gdk::ACTION_LINK );

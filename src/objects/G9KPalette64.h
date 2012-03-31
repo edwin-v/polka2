@@ -8,6 +8,7 @@
 
 namespace Polka {
 
+static const char *G9KPAL4_ID = "PAL/64/G9K";
 
 class G9KPalette64 : public Palette 
 {
@@ -24,7 +25,7 @@ public:
 		: ObjectManager::ObjectFactory( _("64 colour V9990 Palette"),
 		                                _("Palettes"), "0010PAL",
 		                                _("64 colour palette for the V9990/Graphics9000 video display processor."),
-		                                "PAL964", "PALEDIT",
+		                                G9KPAL4_ID, "PALEDIT",
 		                                "object_palg9k64" ) {}
 
 	Object *create( Project& _prj ) const { return new G9KPalette64(_prj); }

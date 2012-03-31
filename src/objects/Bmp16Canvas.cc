@@ -7,11 +7,12 @@
 
 namespace Polka {
 
-static const char *DEP_PAL_TYPES = "PAL1,PAL2,PAL9";
+static const char *BMP16CANVAS_ID = "CANVAS/16/BMP";
+static const char *DEP_PAL_TYPES = "PAL/16/";
 
 
 Bmp16Canvas::Bmp16Canvas( Project& _prj )
-	: Canvas( _prj, "BMP16CANVAS" )
+	: Canvas( _prj, BMP16CANVAS_ID )
 {
 	if( !registerDependency( DEP_PAL, DEP_PAL_TYPES ) )
 		throw(1);
@@ -33,7 +34,7 @@ Bmp16CanvasFactory::Bmp16CanvasFactory()
 		: ObjectManager::ObjectFactory( _("16 Colour Canvas"),
 		                                _("Sketch canvasses"), "0020CANV",
 		                                _("Canvas for sketching 16 colour graphics using a palette. Usable for Screen 5 mode and V9990 P1 and B modes."),
-		                                "BMP16CANVAS", "CANVASEDIT",
+		                                BMP16CANVAS_ID, "CANVASEDIT",
 		                                "object_sketch16" )
 {
 }

@@ -228,6 +228,28 @@ const Glib::ustring& ObjectManager::editorNameFromId( const std::string& id ) co
 	return fit->second->name();
 }
 
+std::vector<std::string> ObjectManager::expandTypeIds( const std::string& id )
+{
+	std::vector<std::string> vec;
+	
+	auto types = split( id, ',' );
+	for( auto it = types.begin(); it != types.end(); ++it ) {
+		*it = trim(*it);
+		int sz = it->size();
+		bool cat = it->at(sz-1) == '/';
+
+		if( cat ) {
+			auto oit = m_ObjectFactories.begin();
+			while( oit != m_ObjectFactories.end() ) {
+				if( (*oit)->classId().compare(0, sz, *it) == 0 ) vec.push_back( (*oit)->classId() );
+				++oit;
+			}
+		} else
+			vec.push_back(*it);
+	}
+	return vec;
+}
+
 const Glib::RefPtr<Gdk::Pixbuf> ObjectManager::locationIcon( const std::string& locId ) const
 {
 	// search for location

@@ -26,7 +26,7 @@ const Byte G9K_PALETTE[16][3] = {
 
 
 G9KPalette64::G9KPalette64( Project& _prj )
-	: Palette( _prj, "PAL964", 5, 64 )
+	: Palette( _prj, G9KPAL4_ID, 5, 64 )
 {
 	for( int c = 0; c < 64; c++ )
 		initColor( c, G9K_PALETTE[c&15][0]*(4-c/16)+(3-c/16),

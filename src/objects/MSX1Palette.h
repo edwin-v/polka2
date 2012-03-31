@@ -8,6 +8,7 @@
 
 namespace Polka {
 
+static const char *MSX1PAL_ID = "PAL/16/MSX1";
 
 class MSX1Palette : public Palette 
 {
@@ -24,7 +25,7 @@ public:
 		: ObjectManager::ObjectFactory( _("MSX1 Palette"),
 		                                _("Palettes"), "0010PAL",
 		                                _("Unchangable palette for displaying original MSX colours."),
-		                                "PAL1", "", "object_palmsx1" ) {}
+		                                MSX1PAL_ID, "", "object_palmsx1" ) {}
 
 	Object *create( Project& _prj ) const { return new MSX1Palette(_prj); }
 };

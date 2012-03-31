@@ -27,7 +27,7 @@ const Byte TMS99X8A_PALETTE[16][3] = {
 
 
 MSX1Palette::MSX1Palette( Project& _prj )
-	: Palette( _prj, "PAL1", 8 )
+	: Palette( _prj, MSX1PAL_ID, 8 )
 {
 	setSkipSave();
 	for( int c = 0; c < 16; c++ )

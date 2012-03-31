@@ -26,7 +26,7 @@ const Byte V9938_PALETTE[16][3] = {
 
 
 MSX2Palette::MSX2Palette( Project& _prj )
-	: Palette( _prj, "PAL2", 3 )
+	: Palette( _prj, MSX2PAL_ID, 3 )
 {
 	for( int c = 0; c < 16; c++ )
 		initColor( c, V9938_PALETTE[c][0],

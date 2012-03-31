@@ -865,9 +865,17 @@ Polka::Object *Project::findObjectOfTypes( const std::string& ids ) const
 
 Polka::Object *Project::findObjectOfType( const std::string& id ) const
 {
+	// full object category?
+	int sz = id.size();
+	bool cat = id.at(sz-1) == '/';
+	// check for an existing object
 	std::list<Polka::Object*>::const_iterator it = m_Objects.begin();
 	while( it != m_Objects.end() ) {
-		if( (*it)->id() == id ) return *it;
+		if( cat ) {
+			if( (*it)->id().compare(0, sz, id) == 0 ) return *it;
+		} else {
+			if( (*it)->id() == id ) return *it;
+		}
 		it++;
 	}
 	return 0;
@@ -896,10 +904,17 @@ Polka::Object *Project::findObject( guint32 funid ) const
 void Project::findAllObjectsOfType( const std::string& id,
                                           std::vector<Polka::Object*>& vec ) const
 {
+	// full object category?
+	int sz = id.size();
+	bool cat = id.at(sz-1) == '/';
 	//std::list<Polka::Object*>::const_iterator it = m_Objects.begin();
 	auto it = m_Objects.begin();
 	while( it != m_Objects.end() ) {
-		if( (*it)->id() == id ) vec.push_back(*it);
+		if( cat ) {
+			if( (*it)->id().compare(0, sz, id) == 0 ) vec.push_back(*it);
+		} else {
+			if( (*it)->id() == id ) vec.push_back(*it);
+		}
 		it++;
 	}
 }

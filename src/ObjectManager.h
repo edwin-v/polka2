@@ -94,6 +94,8 @@ public:
 	const Glib::ustring& editorNameFromId( const std::string& id ) const;
 	const Glib::RefPtr<Gdk::Pixbuf> iconFromId( const std::string& id ) const;
 	Polka::Object *createObject( Project& _prj, const std::string& id );
+
+	std::vector<std::string> expandTypeIds( const std::string& id );
 	
 	const std::string& getObjectEditorId( const std::string& id ) const;
 	Editor *getObjectEditor( const std::string& id );
