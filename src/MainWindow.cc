@@ -6,6 +6,7 @@
 #include "ImportManager.h"
 #include "ResourceManager.h"
 #include <glibmm/i18n.h>
+#include <glibmm/convert.h>
 #include <gtkmm/label.h>
 #include <gtkmm/spinbutton.h>
 #include <gtkmm/filechooserdialog.h>
