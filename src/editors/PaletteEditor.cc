@@ -36,11 +36,13 @@ PaletteEditor::PaletteEditor()
 	Gtk::Frame *f = manage( new Gtk::Frame );
 	f->set_shadow_type( Gtk::SHADOW_IN );
 	f->add( m_Selector );
-	pack_start( *f, Gtk::PACK_EXPAND_WIDGET );
+	m_Selector.set_hexpand();
+	m_Selector.set_vexpand();
+	attach( *f, 0, 0, 1, 1 );
 
 	// table for controls
 	Gtk::Table *table = manage( new Gtk::Table );
-	pack_start( *table, Gtk::PACK_SHRINK  );
+	attach( *table, 0, 1, 1, 1 );
 	
 	// attach spinbuttons i
 	auto adjR = m_RedSlider.getAdjustment();

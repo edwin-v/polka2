@@ -1,7 +1,7 @@
 #ifndef _POLKA_EDITOR_H_
 #define _POLKA_EDITOR_H_
 
-#include <gtkmm/box.h>
+#include <gtkmm/grid.h>
 #include <gtkmm/label.h>
 
 #include "EditorWindow.h"
@@ -11,7 +11,7 @@ namespace Polka {
 class Object;
 
 
-class Editor : public Gtk::VBox
+class Editor : public Gtk::Grid
 {
 public:
 	Editor( const std::string& _id );

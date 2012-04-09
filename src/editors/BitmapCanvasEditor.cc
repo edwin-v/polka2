@@ -77,6 +77,8 @@ BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	add_events(Gdk::POINTER_MOTION_MASK | Gdk::KEY_PRESS_MASK);
 	
 	set_can_focus(true);
+	set_hexpand();
+	set_vexpand();
 
 	m_pBrush = 0;
 	m_pTempBrush = 0;

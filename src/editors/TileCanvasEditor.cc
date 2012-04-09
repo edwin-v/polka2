@@ -33,7 +33,7 @@ TileCanvasEditor::TileCanvasEditor()
 {
 	// Label
 	Gtk::Label *l = manage( new Gtk::Label( _("Tile canvas editor"), Gtk::ALIGN_START ));
-	pack_start( *l, Gtk::PACK_SHRINK );
+	attach( *l, 0, 0, 1, 1 );
 
 	// attach canvas viewer
 	Gtk::ScrolledWindow *sw = manage( new Gtk::ScrolledWindow );
@@ -42,18 +42,18 @@ TileCanvasEditor::TileCanvasEditor()
 	sw->add( m_CanvasView );
 	f->set_shadow_type( Gtk::SHADOW_IN );
 	f->add( *sw );
-	pack_start( *f, Gtk::PACK_EXPAND_WIDGET );
+	attach( *f, 0, 1, 1, 1 );
 	
 	// attach palette selector
 	Gtk::HBox *hbox = manage( new Gtk::HBox );
 	l = manage( new Gtk::Label( _("Current palette:"), Gtk::ALIGN_START ));
 	hbox->pack_start( *l, Gtk::PACK_SHRINK );
 	hbox->pack_start( m_PaletteSelector, Gtk::PACK_SHRINK );
-	pack_start( *hbox, Gtk::PACK_SHRINK );
+	attach( *hbox, 0, 2, 1, 1 );
 
 	// main edit hbox
 	hbox = manage( new Gtk::HBox );
-	pack_start( *hbox, Gtk::PACK_SHRINK );
+	attach( *hbox, 0, 3, 1, 1 );
 	
 	// zoom slider
 	auto a = m_EditorZoom.get_adjustment();

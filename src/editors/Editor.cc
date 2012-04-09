@@ -91,7 +91,7 @@ void Editor::hide()
 	if( !m_MainEditor ) {
 		m_Window.hide();
 	}
-	Gtk::VBox::hide();
+	Gtk::Grid::hide();
 }
 
 //Editor::SignalTitleChanged Editor::signalTitleChanged()

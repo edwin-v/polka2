@@ -219,34 +219,23 @@ Editor *CanvasEditorFactory::create() const
 CanvasEditor::CanvasEditor()
 	: Editor(ID), m_pCanvas(0), m_CanvasView(ID)
 {
-	Gtk::HBox *hbox = manage( new Gtk::HBox );
-	hbox->set_border_width(1);
-	pack_start( *hbox, Gtk::PACK_EXPAND_WIDGET );
-	// left column
-	Gtk::VBox *vbox = manage( new Gtk::VBox );
-	hbox->pack_start( *vbox, Gtk::PACK_SHRINK );
 	
-	// mid column
-	vbox = manage( new Gtk::VBox );
-	hbox->pack_start( *vbox, Gtk::PACK_EXPAND_WIDGET );
 	// main view
 	Gtk::Frame *f = manage( new Gtk::Frame );
 	f->set_shadow_type( Gtk::SHADOW_IN );
 	f->add( m_CanvasView );
-	vbox->pack_start( *f, Gtk::PACK_EXPAND_WIDGET );
+	attach( *f, 0, 0, 1, 1 );
 
 	// lower widgets
 	Gtk::HBox *lbox = manage( new Gtk::HBox );
-	vbox->pack_start( *lbox, Gtk::PACK_SHRINK );
+	attach( *lbox, 0, 1, 1, 1 );
 	
 	lbox->set_border_width(2);
 	lbox->pack_start( m_ColorChooser, Gtk::PACK_SHRINK );
 	lbox->pack_end( m_CanvasView.gridSelector(), Gtk::PACK_SHRINK );
 	
 	// right column
-	vbox = manage( new Gtk::VBox );
-	hbox->pack_start( *vbox, Gtk::PACK_SHRINK );
-	vbox->pack_start( m_ToolWindow, Gtk::PACK_SHRINK );
+	attach( m_ToolWindow, 1, 0, 1, 2 );
 	
 	m_CanvasView.createTools(m_ToolWindow);
 
