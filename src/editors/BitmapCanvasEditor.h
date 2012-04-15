@@ -14,14 +14,6 @@
 
 namespace Polka {
 
-// action/accelerator IDs continued from CanvasView 
-enum { ACC_ACTIVATE_PRI = 1, ACC_ACTIVATE_SEC, ACC_MOD_ACT_FLIP, ACC_SELECT, ACC_SELECT_TILE,
-       ACC_MOD_SELECT_TILE, ACC_MOD_SELECT_SQUARE, ACC_SELECT_FLOAT, ACC_COLORPICK_FG, ACC_COLORPICK_BG,
-       ACC_QUICKPICK_FG, ACC_QUICKPICK_BG, ACC_DRAW_FG, ACC_DRAW_BG, ACC_MOD_DRAW_COL,
-       ACC_LINE_FG, ACC_LINE_BG, ACC_MOD_LINE_ANGLE, ACC_FILL_FG, ACC_FILL_BG,
-       ACC_FLIP_HOR, ACC_FLIP_VER, ACC_ROTATE_CW, ACC_ROTATE_CCW };
-
-
 class ToolButtonWindow;
 
 class BitmapCanvasEditor : public CanvasView
@@ -39,6 +31,13 @@ public:
 	IntSignal signalChangeFGColor();
 	IntSignal signalChangeBGColor();
 	IntSignal signalChangeTool();
+
+	// action/accelerator IDs continued from CanvasView 
+	enum { ACC_ACTIVATE_PRI = 1, ACC_ACTIVATE_SEC, ACC_MOD_ACT_FLIP, ACC_SELECT, ACC_SELECT_TILE,
+		   ACC_MOD_SELECT_TILE, ACC_MOD_SELECT_SQUARE, ACC_SELECT_FLOAT, ACC_COLORPICK_FG, ACC_COLORPICK_BG,
+		   ACC_QUICKPICK_FG, ACC_QUICKPICK_BG, ACC_DRAW_FG, ACC_DRAW_BG, ACC_MOD_DRAW_COL,
+		   ACC_LINE_FG, ACC_LINE_BG, ACC_MOD_LINE_ANGLE, ACC_FILL_FG, ACC_FILL_BG,
+		   ACC_FLIP_HOR, ACC_FLIP_VER, ACC_ROTATE_CW, ACC_ROTATE_CCW };
 
 protected:
 	//virtual bool on_scroll_event(GdkEventScroll* event);

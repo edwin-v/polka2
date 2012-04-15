@@ -9,10 +9,6 @@
 
 namespace Polka {
 
-// action/accelerator IDs
-enum { ACC_PAN = 0 };
-
-
 class Canvas;
 
 class CanvasView : public Gtk::DrawingArea, public AccelBase
@@ -37,6 +33,9 @@ public:
 	
 	//
 	GridSelector& gridSelector();
+
+	// action/accelerator IDs
+	enum { ACC_PAN = 0 };
 
 protected:
 	virtual bool on_draw( const Cairo::RefPtr<Cairo::Context>& cr );
