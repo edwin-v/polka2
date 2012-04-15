@@ -6,7 +6,7 @@ using namespace std;
 namespace Polka {
 
 CanvasView::CanvasView( const std::string& _id )
-	: AccelBase(_id), m_Dragging(false), m_ViewLocked(false)
+	: AccelBase(_id), m_pCanvas(0), m_Dragging(false), m_ViewLocked(false)
 {
 	add_events(Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::BUTTON2_MOTION_MASK | Gdk::SCROLL_MASK);
 
