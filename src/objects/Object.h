@@ -57,7 +57,7 @@ public:
 	void setInitMode( bool val = true );
 
 protected:
-	bool registerDependency( int id, const std::string& typespec );
+	bool registerDependency( int id, const std::string& typespec, const Object *object = 0 );
 	bool unregisterDependency( int id );
 	bool setDependency( int id, const Object *object );
 	const Object *dependency( int id ) const;

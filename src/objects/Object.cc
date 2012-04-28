@@ -168,16 +168,23 @@ const std::string& Object::dependencyType( int id ) const
  *        object types that can satisfy this dependecy
  * @return #FALSE if id cannot be registered as dependecy
  */
-bool Object::registerDependency( int id, const std::string& typespec )
+bool Object::registerDependency( int id, const std::string& typespec, const Object *object )
 {
 	// check if dependency id exists
 	auto it = m_Dependencies.find(id);
 	if( it != m_Dependencies.end() )
 		return false;
 		
+	// verify dependency
+	if( object )
+		if( !checkObjectType( object->id(), it->second.type ) )
+			object = 0;
+
 	// get dependency
-	Object *obj = m_Project.findObjectOfTypes(typespec);
-	if( !obj ) return false;
+	if( !object ) {
+		object = m_Project.findObjectOfTypes(typespec);
+		if( !object ) return false;
+	}
 
 	if( !m_InitMode ) {
 		// create undo
@@ -194,13 +201,13 @@ bool Object::registerDependency( int id, const std::string& typespec )
 		sr.setField( 1, typespec );
 		sr.createItem( DEP_CHANGE_ITEM, DEP_ITEM_TYPE );
 		sr.setField( 0, id );
-		sr.setField( 1, obj->name() );
+		sr.setField( 1, object->name() );
 	}
 	
 	m_Dependencies[id].type = typespec;
-	m_Dependencies[id].object = obj;
+	m_Dependencies[id].object = object;
 
-	obj->setDependencyOf(this);
+	const_cast<Object*>(object)->setDependencyOf(this);
 	return true;
 }
 
