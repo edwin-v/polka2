@@ -23,7 +23,9 @@ MainWindow::MainWindow()
 	: m_pProject(0), m_EditorMenuId(0)
 {
 	set_title("Polka 2");
-	set_icon( ResourceManager::get().getIcon("p2icon_48") );
+	std::vector< Glib::RefPtr<Gdk::Pixbuf> > icons;
+	icons.push_back( ResourceManager::get().getIcon("p2icon_48") );
+	set_default_icon_list( icons );
 	add(m_MainBox);
 	
 	// build the menus and toolbars
