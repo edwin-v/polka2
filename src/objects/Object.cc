@@ -208,6 +208,10 @@ bool Object::registerDependency( int id, const std::string& typespec, const Obje
 	m_Dependencies[id].object = object;
 
 	const_cast<Object*>(object)->setDependencyOf(this);
+	
+	// notify editor
+	if( m_pEditor ) m_pEditor->updateDependencies();
+
 	return true;
 }
 
@@ -251,6 +255,10 @@ bool Object::unregisterDependency( int id )
 	
 	// remove the dependecy
 	m_Dependencies.erase(it);
+
+	// notify editor
+	if( m_pEditor ) m_pEditor->updateDependencies();
+
 	return true;
 }
 
@@ -301,6 +309,9 @@ bool Object::setDependency( int id, const Object *object )
 		sr.setField( 1, robj.name() );
 	}
 	
+	// notify editor
+	if( m_pEditor ) m_pEditor->updateDependencies();
+
 	return true;
 }
 

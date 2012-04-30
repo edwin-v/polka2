@@ -58,6 +58,12 @@ void Editor::updateTreeNames()
 	// implement in derived classes
 }
 
+void Editor::updateDependencies()
+{
+	// empty default
+	// implement in derived classes
+}
+
 const Glib::ustring& Editor::menuString()
 {
 	static Glib::ustring EMPTY_MENU;

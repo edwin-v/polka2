@@ -28,6 +28,8 @@ public:
 
 	Glib::ustring title() const;
 
+	virtual void updateDependencies();
+
 	// signals
 	//typedef sigc::signal<void, const Glib::ustring> SignalTitleChanged;
 	//SignalTitleChanged signalTitleChanged();
