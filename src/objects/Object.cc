@@ -177,7 +177,7 @@ bool Object::registerDependency( int id, const std::string& typespec, const Obje
 		
 	// verify dependency
 	if( object )
-		if( !checkObjectType( object->id(), it->second.type ) )
+		if( !checkObjectType( object->id(), typespec ) )
 			object = 0;
 
 	// get dependency
@@ -189,7 +189,7 @@ bool Object::registerDependency( int id, const std::string& typespec, const Obje
 	if( !m_InitMode ) {
 		// create undo
 		UndoAction& action = project().undoHistory().createAction( *this );
-		action.setName( m_Name + _("dependency created") );
+		action.setName( m_Name + _(" dependency created") );
 		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 		Storage& su = action.setUndoData( DEP_ID );
 		su.createItem( DEP_REMOVE_ITEM, DEP_ITEMID_TYPE );
@@ -238,7 +238,7 @@ bool Object::unregisterDependency( int id )
 	if( !m_InitMode ) {
 		// create undo
 		UndoAction& action = project().undoHistory().createAction( *this );
-		action.setName( m_Name + _("dependency removed") );
+		action.setName( m_Name + _(" dependency removed") );
 		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 		Storage& su = action.setUndoData( DEP_ID );
 		su.createItem( DEP_CREATE_ITEM, DEP_ITEM_TYPE );
@@ -296,7 +296,7 @@ bool Object::setDependency( int id, const Object *object )
 	if( !m_InitMode ) {
 		// create undo
 		UndoAction& action = project().undoHistory().createAction( *this );
-		action.setName( m_Name + _("dependency changed") );
+		action.setName( m_Name + _(" dependency changed") );
 		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 		Storage& su = action.setUndoData( DEP_ID );
 		su.createItem( DEP_CHANGE_ITEM, DEP_ITEM_TYPE );
@@ -341,6 +341,36 @@ const Object *Object::dependency( int id ) const
 		return 0;
 		
 	return it->second.object;
+}
+
+/**
+ * Returns the number of dependecies for this object.
+ * 
+ * @return the number of dependencies
+ */
+int Object::dependencyCount() const
+{
+	return m_Dependencies.size();
+}
+
+/**
+ * Returns the dependency ID for the dependency that is the 'nr'th in
+ * the sorted list.
+ * 
+ * This function can be used to loop through all dependencies.
+ * 
+ * @param nr the number of the dependency (asserts if out of range!)
+ * @return the dependency ID
+ */
+int Object::dependencyId( int nr ) const
+{
+	assert( guint(nr) < m_Dependencies.size() );
+	auto it = m_Dependencies.begin();
+	while(nr) {
+		++it;
+		nr--;
+	}
+	return it->first;
 }
 
 /**

@@ -140,7 +140,7 @@ void CanvasView::restoreCursor()
 
 bool CanvasView::on_scroll_event(GdkEventScroll* event)
 {
-	if( m_ViewLocked ) return false;
+	if( m_ViewLocked || !hasCanvas() ) return false;
 	
 	int sc = scale(), ox = dx(), oy = dy();
 	if(event->direction == GDK_SCROLL_UP) {
@@ -169,7 +169,7 @@ bool CanvasView::on_scroll_event(GdkEventScroll* event)
 
 bool CanvasView::on_button_press_event(GdkEventButton *event)
 {
-	if( m_ViewLocked ) return false;
+	if( m_ViewLocked || !hasCanvas() ) return false;
 
 	// handle middle button drag start
 	if( !m_Dragging ) {
@@ -187,7 +187,7 @@ bool CanvasView::on_button_press_event(GdkEventButton *event)
 
 bool CanvasView::on_motion_notify_event(GdkEventMotion* event)
 {
-	if( m_ViewLocked ) return false;
+	if( m_ViewLocked || !hasCanvas() ) return false;
 
 	if( m_Dragging ) {
 		
@@ -208,7 +208,7 @@ bool CanvasView::on_motion_notify_event(GdkEventMotion* event)
 
 bool CanvasView::on_button_release_event(GdkEventButton *event)
 {
-	if( m_ViewLocked ) return false;
+	if( m_ViewLocked || !hasCanvas() ) return false;
 
 	// handle middle button drag end
 	if( m_Dragging && isAccel( ACC_PAN, event->button, 0, event->state) ) {

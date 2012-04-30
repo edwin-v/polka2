@@ -61,6 +61,9 @@ protected:
 	bool unregisterDependency( int id );
 	bool setDependency( int id, const Object *object );
 	const Object *dependency( int id ) const;
+	// helpers for alternative access
+	int dependencyCount() const;
+	int dependencyId( int nr ) const;
 
 	// object update
 	void update( bool full = true );

@@ -668,7 +668,7 @@ void Project::onCreateObject()
 		// set undo delete
 		Storage& su = action.setUndoData( ACTION_DELETE );
 		su.createItem("DELETE_NAME", "S");
-		su.setField( 0, name );
+		su.setField( 0, Glib::ustring( row[m_Cols.m_Name] ) );
 		// set redo create empty
 		Storage& sr = action.setRedoData( ACTION_CREATE );
 		sr.createItem("CREATE_EMPTY", "SSS");
@@ -933,7 +933,11 @@ void Project::renameLocation( const Glib::ustring& from, const Glib::ustring& to
 	row[m_Cols.m_Name] = to;
 	// ... and object if object row
 	Polka::Object *obj = row[m_Cols.m_pObject];
-	if(obj) obj->setName( to );
+	if(obj) {
+		obj->setName( to );
+		m_SignalTreeUpdate.emit();
+	}
+
 }
 
 void Project::createFolder( const Glib::ustring& location, const Glib::ustring& name )
