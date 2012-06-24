@@ -35,7 +35,7 @@ public:
 	GridSelector& gridSelector();
 
 	// action/accelerator IDs
-	enum { ACC_PAN = 0 };
+	enum { ACC_PAN = 0, ACC_END };
 
 protected:
 	virtual bool on_draw( const Cairo::RefPtr<Cairo::Context>& cr );
