@@ -118,6 +118,9 @@ private:
 	SignalEditObject m_SignalEditObject;
 	SignalTreeUpdate m_SignalTreeUpdate;
 	
+	guint32 m_ForceFUNID;
+	
+	
 	// signal handlers
 	void onEdit();
 	void onCreateFolder();
@@ -132,7 +135,7 @@ private:
 	void renameLocation( const Glib::ustring& from, const Glib::ustring& to );
 	void createFolder( const Glib::ustring& location, const Glib::ustring& name );
 	Gtk::TreeModel::iterator createFolder( Gtk::TreeModel::iterator location, const Glib::ustring& name );
-	Gtk::TreeModel::iterator createNewObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type );
+	Gtk::TreeModel::iterator createNewObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type, guint32 funid = 0 );
 	Gtk::TreeModel::iterator createObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type, Storage& s );
 	Gtk::TreeModel::iterator createObject( Gtk::TreeModel::iterator location, const Glib::ustring& name, const std::string& type );
 	void deleteLocation( const Glib::ustring& name );

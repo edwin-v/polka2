@@ -501,8 +501,6 @@ void MainWindow::changeModifiedStatus( UndoHistory::ChangeType type )
 		case UndoHistory::CHANGE_REDOACTION:
 			m_ModifiedCounter++;
 			break;
-		case UndoHistory::CHANGE_NEWDISPLAY:
-			break;
 		default:
 			if( m_ModifiedCounter != 0 )
 				m_ModifiedCounter = std::numeric_limits<int>::max()/2;

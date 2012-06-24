@@ -131,8 +131,8 @@ void ObjectPropertiesDialog::on_response( int id )
 {
 	if( !m_InfoChanged && !m_PropertiesChanged ) return;
 	if( id == Gtk::RESPONSE_OK ) {
-		// init undo group
-		m_Object.project().undoHistory().openActionGroup( _("Change properties"), ObjectManager::get().iconFromId( m_Object.id() ) );
+		// start undo
+		m_Object.project().undoHistory().createUndoPoint( _("Change properties"), ObjectManager::get().iconFromId( m_Object.id() ) );
 
 		// rename object through project (for undo)
 		if( m_InfoChanged ) {
@@ -143,9 +143,6 @@ void ObjectPropertiesDialog::on_response( int id )
 		if( m_PropertiesChanged )
 			for( unsigned int i = 0; i < m_ObjectPropertyTabs.size(); i++ )
 				m_ObjectPropertyTabs[i]->apply();
-
-		// close undo group
-		m_Object.project().undoHistory().closeActionGroup();
 
 	} else
 		for( unsigned int i = 0; i < m_ObjectPropertyTabs.size(); i++ )

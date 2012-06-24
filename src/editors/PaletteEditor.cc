@@ -1,5 +1,6 @@
 #include "PaletteEditor.h"
 #include "Palette.h"
+#include "Project.h"
 #include <gtkmm/alignment.h>
 #include <gtkmm/spinbutton.h>
 #include <gtkmm/table.h>
@@ -164,6 +165,9 @@ void PaletteEditor::onChanged()
 	if( !m_pPalette ) return;
 	if( m_Updating ) return;
 
+	m_pPalette->project().undoHistory().createUndoPoint( 
+		_("Change palette color"), 
+		ObjectManager::get().iconFromId( m_pPalette->id() ) );
 	m_pPalette->setColor( m_Selector.primaryColor(), 
 	      double(m_RedSlider.value())/m_RedSlider.range(),
 	      double(m_GreenSlider.value())/m_GreenSlider.range(),
@@ -214,17 +218,32 @@ void PaletteEditor::onClick( int b )
 
 void PaletteEditor::copyColor()
 {
-	if( m_pPalette ) m_pPalette->copyColor( m_Selector.secondaryColor(), m_Selector.primaryColor() );
+	if( m_pPalette ) {
+		m_pPalette->project().undoHistory().createUndoPoint( 
+			_("Change palette color"), 
+			ObjectManager::get().iconFromId( m_pPalette->id() ) );
+		m_pPalette->copyColor( m_Selector.secondaryColor(), m_Selector.primaryColor() );
+	}
 }
 
 void PaletteEditor::swapColor()
 {
-	if( m_pPalette ) m_pPalette->swapColor( m_Selector.primaryColor(), m_Selector.secondaryColor() );
+	if( m_pPalette ) {
+		m_pPalette->project().undoHistory().createUndoPoint( 
+			_("Swap palette color"), 
+			ObjectManager::get().iconFromId( m_pPalette->id() ) );
+		m_pPalette->swapColor( m_Selector.primaryColor(), m_Selector.secondaryColor() );
+	}
 }
 
 void PaletteEditor::createGradient()
 {
-	if( m_pPalette ) m_pPalette->createGradient( m_Selector.primaryColor(), m_Selector.secondaryColor() );
+	if( m_pPalette ) {
+		m_pPalette->project().undoHistory().createUndoPoint( 
+			_("Palette gradient"), 
+			ObjectManager::get().iconFromId( m_pPalette->id() ) );
+		m_pPalette->createGradient( m_Selector.primaryColor(), m_Selector.secondaryColor() );
+	}
 }
 
 

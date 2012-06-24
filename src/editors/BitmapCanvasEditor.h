@@ -46,6 +46,7 @@ protected:
 	virtual bool on_motion_notify_event(GdkEventMotion* event);
 	
 	virtual bool on_key_press_event (GdkEventKey* event);
+	virtual bool on_key_release_event (GdkEventKey* event);
 
 	virtual bool on_draw( const Cairo::RefPtr<Cairo::Context>& cr );
 
@@ -54,6 +55,8 @@ protected:
 
 	virtual void changeCursor( Glib::RefPtr<Gdk::Cursor> cursor = Glib::RefPtr<Gdk::Cursor>() );
 	virtual void restoreCursor();
+	
+	void createUndo( const Glib::ustring& text, const Glib::RefPtr<Gdk::Pixbuf>& icon );
 
 	OverlayPainter m_Overlay;
 
@@ -100,6 +103,8 @@ private:
 	Glib::RefPtr<Gdk::Cursor> m_refToolCursor;
 	Brush *m_pBrush, *m_pTempBrush, *m_pSelectionBrush;
 
+	bool toolActivate( guint button, guint key, guint mods );
+	bool toolRelease( guint button, guint key, guint mods );
 
 	void screenDraw( int x, int y, bool use_brush = false );
 	

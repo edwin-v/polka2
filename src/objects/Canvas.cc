@@ -552,7 +552,7 @@ void Canvas::undoAction( const std::string& id, Storage& s )
 
 // undo functions
 
-void Canvas::startAction( Glib::ustring text, Glib::RefPtr<Gdk::Pixbuf> icon )
+void Canvas::startAction( const Glib::ustring& text, const Glib::RefPtr<Gdk::Pixbuf>& icon )
 {
 	m_ActionRect = Gdk::Rectangle( 0, 0, 0, 0 );	
 	m_ActionText = text;

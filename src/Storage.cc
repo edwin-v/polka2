@@ -32,9 +32,11 @@ Storage::~Storage()
 void Storage::setFileIdentification( const std::string& id, int major, int minor )
 {
 	assert( minor < 1000 ); // limit minor version
-	createItem( id, "II" );
-	setField( 0, major );
-	setField( 1, minor );
+	if( !id.empty() ) {
+		createItem( id, "II" );
+		setField( 0, major );
+		setField( 1, minor );
+	}
 	m_VersionMajor = major;
 	m_VersionMinor = minor;
 }

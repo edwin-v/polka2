@@ -1,6 +1,7 @@
 #include "BitmapCanvasEditor.h"
 #include "ToolButtonWindow.h"
 #include "Canvas.h"
+#include "Project.h"
 #include "Palette.h"
 #include "ResourceManager.h"
 #include <gtkmm/image.h>
@@ -246,6 +247,12 @@ void BitmapCanvasEditor::restoreCursor()
 	get_window()->set_cursor( m_refToolCursor );
 }
 
+void BitmapCanvasEditor::createUndo( const Glib::ustring& text, const Glib::RefPtr<Gdk::Pixbuf>& icon )
+{
+	canvas().project().undoHistory().createUndoPoint(text, icon);
+	canvas().startAction(text, icon);
+}
+
 void BitmapCanvasEditor::updateCoords( int x, int y )
 {
 	// store last
@@ -371,59 +378,9 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 {
 	grab_focus();
 	updateCoords( event->x, event->y );
-	// activate tool
-	bool res = false;
-	int but = accelEventButton(event);
-	switch( m_CurrentTool ) {
-		case TOOL_SELECT:
-			res = rectSelectActivate(but, 0, event->state);
-			break;
-		case TOOL_EYEDROPPER:
-			res = eyeDropperActivate(but, 0, event->state);
-			break;
-		case TOOL_PEN:
-			res = penActivate(but, 0, event->state);
-			break;
-		case TOOL_BRUSH:
-			res = brushActivate(but, 0, event->state);
-			break;
-		case TOOL_CHANGECOLOR:
-			res = chgColorActivate(but, 0, event->state);
-			break;
-		case TOOL_LINE:
-			res = lineActivate(but, 0, event->state);
-			break;
-		case TOOL_RECT:
-			res = rectActivate(but, 0, event->state);
-			break;
-		case TOOL_FILL:
-			res = fillActivate(but, 0, event->state);
-			break;
-		case TOOL_FLIP:
-			res = flipActivate(but, 0, event->state);
-			break;
-		case TOOL_ROTATE:
-			res = rotateActivate(but, 0, event->state);
-			break;
-		default:
-			break;
-	}
-
-	// exit if used
-	if( res ) return true;
 	
-	// no tool used, secondary functions
-	if( isAccel( ACC_QUICKPICK_FG, but, 0, event->state ) ) {
-		// quick colorpick, temp store current
-		bool temp = m_DragPrimary;
-		Glib::RefPtr<Gdk::Cursor> tempCursor = m_refToolCursor;
-		m_DragPrimary = true;
-		eyeDropperUpdate( event->state );
-		m_DragPrimary = temp;
-		changeCursor(tempCursor);
-	}
-	
-	
+	bool res = toolActivate(accelEventButton(event), 0, event->state);
+	if(res) return true;
 	
 	return CanvasView::on_button_press_event(event);
 }
@@ -475,36 +432,10 @@ bool BitmapCanvasEditor::on_motion_notify_event(GdkEventMotion* event)
 bool BitmapCanvasEditor::on_button_release_event(GdkEventButton *event)
 {
 	updateCoords( event->x, event->y );
-	// notify button release to tool
-	bool res = false;
-	switch( m_CurrentTool ) {
-		case TOOL_SELECT:
-			res = rectSelectRelease( event->button, 0 );
-			break;
-		case TOOL_EYEDROPPER:
-			res = eyeDropperRelease( event->button, 0 );
-			break;
-		case TOOL_PEN:
-			res = penRelease( event->button, 0 );
-			break;
-		case TOOL_BRUSH:
-			res = brushRelease( event->button, 0 );
-			break;
-		case TOOL_CHANGECOLOR:
-			res = chgColorRelease( event->button, 0 );
-			break;
-		case TOOL_LINE:
-			res = lineRelease( event->button, 0, event->state );
-			break;
-		case TOOL_RECT:
-			res = rectRelease( event->button, 0, event->state );
-			break;
-		default:
-			break;
-	}
 
 	// exit if used
-	if( res ) return true;
+	if( toolRelease(event->button, 0, event->state) )
+		return true;
 
 	return CanvasView::on_button_release_event(event);
 }
@@ -516,6 +447,7 @@ bool BitmapCanvasEditor::on_key_press_event( GdkEventKey *event )
 			m_ZoomMode = false;
 			unlockView();
 			canvas().setClipRectangle();
+			return true;
 		}
 	} else {
 		if( event->keyval == GDK_KEY_F12 ) {
@@ -565,9 +497,117 @@ bool BitmapCanvasEditor::on_key_press_event( GdkEventKey *event )
 			if( sh.x() < datx || sh.y() < daty ||
 			    sh.x()+sh.width() > datx+gw ||
 			    sh.y()+sh.height() > daty+gh ) sh.setVisible(false);
+			    
+			return true;
 		}
 	}
+	
+	if( toolActivate( 0, event->keyval, event->state ) )
+		return true;
+	
 	return CanvasView::on_key_press_event(event);
+}
+
+bool BitmapCanvasEditor::on_key_release_event( GdkEventKey *event )
+{
+	if( toolRelease(0, event->keyval, event->state) )
+		return true;
+		
+	return CanvasView::on_key_release_event(event);
+}
+
+bool BitmapCanvasEditor::toolActivate( guint button, guint key, guint mods )
+{
+	// activate tool
+	bool res = false;
+	switch( m_CurrentTool ) {
+		case TOOL_SELECT:
+			res = rectSelectActivate(button, key, mods);
+			break;
+		case TOOL_EYEDROPPER:
+			res = eyeDropperActivate(button, key, mods);
+			break;
+		case TOOL_PEN:
+			res = penActivate(button, key, mods);
+			break;
+		case TOOL_BRUSH:
+			res = brushActivate(button, key, mods);
+			break;
+		case TOOL_CHANGECOLOR:
+			res = chgColorActivate(button, key, mods);
+			break;
+		case TOOL_LINE:
+			res = lineActivate(button, key, mods);
+			break;
+		case TOOL_RECT:
+			res = rectActivate(button, key, mods);
+			break;
+		case TOOL_FILL:
+			res = fillActivate(button, key, mods);
+			break;
+		case TOOL_FLIP:
+			res = flipActivate(button, key, mods);
+			break;
+		case TOOL_ROTATE:
+			res = rotateActivate(button, key, mods);
+			break;
+		default:
+			break;
+	}
+
+	// exit if used
+	if( res ) return true;
+	
+	// no tool used, secondary functions
+	int acc = isAccel( {ACC_QUICKPICK_FG, ACC_QUICKPICK_BG}, button, key, mods );
+	if( acc == ACC_QUICKPICK_FG ) {
+		bool temp = m_DragPrimary;
+		m_DragPrimary = true;
+		m_PickFG = true;
+		eyeDropperUpdate( mods );
+		m_DragPrimary = temp;
+		return true;
+	} else if( acc == ACC_QUICKPICK_BG ) {
+		bool temp = m_DragPrimary;
+		m_DragPrimary = true;
+		m_PickFG = false;
+		eyeDropperUpdate( mods );
+		m_DragPrimary = temp;
+		return true;
+	}
+	return false;
+}
+
+bool BitmapCanvasEditor::toolRelease( guint button, guint key, guint mods )
+{
+	// notify button release to tool
+	bool res = false;
+	switch( m_CurrentTool ) {
+		case TOOL_SELECT:
+			res = rectSelectRelease( button, key );
+			break;
+		case TOOL_EYEDROPPER:
+			res = eyeDropperRelease( button, key );
+			break;
+		case TOOL_PEN:
+			res = penRelease( button, key );
+			break;
+		case TOOL_BRUSH:
+			res = brushRelease( button, key );
+			break;
+		case TOOL_CHANGECOLOR:
+			res = chgColorRelease( button, key );
+			break;
+		case TOOL_LINE:
+			res = lineRelease( button, key, mods );
+			break;
+		case TOOL_RECT:
+			res = rectRelease( button, key, mods );
+			break;
+		default:
+			break;
+	}
+	return res;
 }
 
 bool BitmapCanvasEditor::on_draw( const Cairo::RefPtr<Cairo::Context>& cr )
@@ -718,7 +758,7 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint key, guint mods
 		// remove background if needed
 		if( !m_ToolSelectPanel.copyMode() ) {
 			// draw rectangle
-			canvas().startAction( _("Clear selection background"), ResourceManager::get().getIcon("canvasedit_tool_select") );
+			createUndo( _("Clear selection background"), ResourceManager::get().getIcon("canvasedit_tool_select") );
 			m_Pen.setColor( m_BGColor );
 			canvas().drawRect( m_Overlay.shape(10).x(), 
 			                   m_Overlay.shape(10).y(), 
@@ -742,7 +782,7 @@ bool BitmapCanvasEditor::rectSelectActivate( guint button, guint key, guint mods
 			m_SelectionMarker.setVisible(false);
 			m_SelectionMarker.unsetBrush();
 			// apply brush at current location
-			canvas().startAction( _("Apply selection"), ResourceManager::get().getIcon("canvasedit_tool_select") );
+			createUndo( _("Apply selection"), ResourceManager::get().getIcon("canvasedit_tool_select") );
 			canvas().draw( m_SelectionMarker.x(), m_SelectionMarker.y(), *m_pSelectionBrush );
 			canvas().finishAction();
 			delete m_pSelectionBrush;
@@ -1122,10 +1162,12 @@ bool BitmapCanvasEditor::eyeDropperUpdate( guint mods )
 {
 	// pick color if down
 	if( m_DragPrimary ) {
-		if( m_PickFG )
-			m_SignalChangeFGColor.emit( canvas().data( m_PixX, m_PixY ) );
-		else
-			m_SignalChangeBGColor.emit( canvas().data( m_PixX, m_PixY ) );
+		if( m_PixX >= 0 && m_PixY >= 0 && m_PixX < canvas().width() && m_PixY < canvas().height() ) {
+			if( m_PickFG )
+				m_SignalChangeFGColor.emit( canvas().data( m_PixX, m_PixY ) );
+			else
+				m_SignalChangeBGColor.emit( canvas().data( m_PixX, m_PixY ) );
+		}
 		return true;
 	}
 	return false;
@@ -1173,7 +1215,7 @@ bool BitmapCanvasEditor::penActivate( guint button, guint key, guint mods )
 		m_PenColor = -1;
 		m_UseFGColor = f == ACC_DRAW_FG;
 		// start action
-		canvas().startAction( _("Draw pencil"), ResourceManager::get().getIcon("canvasedit_tool_draw") );
+		createUndo( _("Draw pencil"), ResourceManager::get().getIcon("canvasedit_tool_draw") );
 		m_DragPrimary = true;
 
 		// draw initial pixel
@@ -1274,7 +1316,7 @@ bool BitmapCanvasEditor::brushActivate( guint button, guint key, guint mods )
 		m_PenColor = -1;
 		m_UseFGColor = f == ACC_DRAW_FG;
 		// start action
-		canvas().startAction( _("Draw brush"), ResourceManager::get().getIcon("canvasedit_tool_brush") );
+		createUndo( _("Draw brush"), ResourceManager::get().getIcon("canvasedit_tool_brush") );
 		m_DragPrimary = true;
 		
 		brushUpdate( mods );
@@ -1395,7 +1437,7 @@ bool BitmapCanvasEditor::chgColorActivate( guint button, guint key, guint mods )
 		m_PenColor = -1;
 		m_UseFGColor = f == ACC_DRAW_FG;
 		// start action
-		canvas().startAction( _("Change color"), ResourceManager::get().getIcon("canvasedit_tool_changecolor") );
+		createUndo( _("Change color"), ResourceManager::get().getIcon("canvasedit_tool_changecolor") );
 		m_DragPrimary = true;
 		
 		chgColorUpdate( mods );
@@ -1590,7 +1632,7 @@ bool BitmapCanvasEditor::lineRelease( guint button, guint key, guint mods )
 		int x = m_pToolMarker->x(), y = m_pToolMarker->y(), w = m_pToolMarker->width(), h = m_pToolMarker->height();
 		canvasChanged( Gdk::Rectangle( min(x, x+w), min(y, y+h), 1+abs(w), 1+abs(h) ) );
 		// draw line
-		canvas().startAction( _("Line"), ResourceManager::get().getIcon("canvasedit_tool_drawline") );
+		createUndo( _("Line"), ResourceManager::get().getIcon("canvasedit_tool_drawline") );
 		canvas().drawLine( m_DragStartX, m_DragStartY, m_DragEndX, m_DragEndY, m_Pen );
 		canvas().finishAction();
 		m_DragPrimary = false;
@@ -1708,7 +1750,7 @@ bool BitmapCanvasEditor::rectRelease( guint button, guint key, guint mods )
 		int x = m_pToolMarker->x(), y = m_pToolMarker->y(), w = m_pToolMarker->width(), h = m_pToolMarker->height();
 		canvasChanged( Gdk::Rectangle( min(x, x+w)-1, min(y, y+h)-1, 3+abs(w), 3+abs(h) ) );
 		// draw rectangle
-		canvas().startAction( _("Rectangle"), ResourceManager::get().getIcon("canvasedit_tool_drawrect") );
+		createUndo( _("Rectangle"), ResourceManager::get().getIcon("canvasedit_tool_drawrect") );
 		canvas().drawRect( m_DragStartX, m_DragStartY, m_DragEndX, m_DragEndY, m_Pen, fillPen );
 		canvas().finishAction();
 		m_DragPrimary = false;
@@ -1757,7 +1799,7 @@ bool BitmapCanvasEditor::fillActivate( guint button, guint key, guint mods )
 				m_Pen.setColor( m_BGColor );
 			else
 				m_Pen.setColor( m_FGColor );
-			canvas().startAction( _("Bucket fill"), ResourceManager::get().getIcon("canvasedit_tool_fill") );
+			createUndo( _("Bucket fill"), ResourceManager::get().getIcon("canvasedit_tool_fill") );
 			canvas().bucketFill( m_PixX, m_PixY, m_Pen );
 			canvas().finishAction();
 		}
@@ -1798,7 +1840,7 @@ bool BitmapCanvasEditor::flipActivate( guint button, guint key, guint mods )
 			                              m_pSelectionBrush->height()+4) );
 		} else if( m_ToolMode == FLIP_MODE_SELECT ) {
 			// flip static selection	
-			canvas().startAction( _("Flip selection"), ResourceManager::get().getIcon("canvasedit_tool_flip") );
+			createUndo( _("Flip selection"), ResourceManager::get().getIcon("canvasedit_tool_flip") );
 			int x = m_Overlay.shape(10).x(), y = m_Overlay.shape(10).y();
 			int w = m_Overlay.shape(10).width(), h = m_Overlay.shape(10).height();
 			canvas().flip(x, y, w, h, sec );
@@ -1806,7 +1848,7 @@ bool BitmapCanvasEditor::flipActivate( guint button, guint key, guint mods )
 			canvasChanged( Gdk::Rectangle(x-2, y-2, w+4, h+4) );
 		} else {
 			// flip whole canvas
-			canvas().startAction( _("Flip"), ResourceManager::get().getIcon("canvasedit_tool_flip") );
+			createUndo( _("Flip"), ResourceManager::get().getIcon("canvasedit_tool_flip") );
 			canvas().flip( 0, 0, canvas().width(), canvas().height(), sec );
 			canvas().finishAction();
 			queue_draw();
@@ -1899,7 +1941,7 @@ bool BitmapCanvasEditor::rotateActivate( guint button, guint key, guint mods )
 			                              m_pSelectionBrush->height()+4) );
 		} else if( m_ToolMode == FLIP_MODE_SELECT ) {
 			// rotate static square selection	
-			canvas().startAction( _("Rotate selection"), ResourceManager::get().getIcon("canvasedit_tool_rotate") );
+			createUndo( _("Rotate selection"), ResourceManager::get().getIcon("canvasedit_tool_rotate") );
 			int x = m_Overlay.shape(10).x(), y = m_Overlay.shape(10).y();
 			int w = m_Overlay.shape(10).width();
 			canvas().rotate(x, y, w, sec );

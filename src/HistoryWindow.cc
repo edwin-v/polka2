@@ -145,9 +145,6 @@ void HistoryWindow::historyChanged( UndoHistory::ChangeType type )
 		case UndoHistory::CHANGE_ADDUNDO:
 			addLastUndoRow();
 			break;
-		case UndoHistory::CHANGE_NEWDISPLAY:
-			changeLastUndoRow();
-			break;
 		case UndoHistory::CHANGE_UNDOACTION:
 			undoAction();
 			break;
@@ -198,26 +195,11 @@ void HistoryWindow::addLastUndoRow()
 	m_itLastUndo = m_refListModel->append();
 	Gtk::TreeModel::Row row = *m_itLastUndo;
 	row[m_Columns.m_ColType] = m_refUndoIcon;
-	row[m_Columns.m_ColIcon] = action.icon();
-	row[m_Columns.m_ColName] = action.name();
+	row[m_Columns.m_ColIcon] = action.userActionIcon();
+	row[m_Columns.m_ColName] = action.userActionName();
 	row[m_Columns.m_pAction] = &action;
 	
 	m_UndoButton.set_sensitive();
-}
-
-void HistoryWindow::changeLastUndoRow()
-{
-	// assume undo row exists
-	const UndoAction& action = m_pHistory->lastUndoAction();
-
-	cout << "Undo changed -- " << action.name().raw() << 
-         " UndoID: " << action.undoId() << 
-         " RedoID: " << action.redoId() << endl;
-
-	Gtk::TreeModel::Row row = *m_itLastUndo;
-	row[m_Columns.m_ColIcon] = action.icon();
-	row[m_Columns.m_ColName] = action.name();
-	row[m_Columns.m_pAction] = &action;
 }
 
 void HistoryWindow::undoAction()

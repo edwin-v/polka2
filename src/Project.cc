@@ -27,15 +27,17 @@ const std::string MIME_OBJNAME = _MIME_BASE"-objectname-";
 
 
 Project::Project( Glib::RefPtr<Gtk::UIManager> ui_manager )
-	: Gtk::TreeView(), m_History(*this), m_pImportAction(0),
-	  m_refUIManager( ui_manager ), m_CreateMenuId(0)
+	: Gtk::TreeView(), m_History(*this, FILE_VERSION_MAJOR, FILE_VERSION_MINOR),
+	  m_pImportAction(0), m_refUIManager( ui_manager ), m_CreateMenuId(0),
+	  m_ForceFUNID(0)
 {
 	init();
 }
 
 Project::Project( Glib::RefPtr<Gtk::UIManager> ui_manager, const std::string& filename )
-	: Gtk::TreeView(), m_History(*this), m_pImportAction(0), 
-	  m_refUIManager( ui_manager ), m_CreateMenuId(0)
+	: Gtk::TreeView(), m_History(*this, FILE_VERSION_MAJOR, FILE_VERSION_MINOR),
+	  m_pImportAction(0), m_refUIManager( ui_manager ), m_CreateMenuId(0),
+	  m_ForceFUNID(0)
 {
 	init();
 	loadFromFile( filename );
@@ -272,9 +274,11 @@ void Project::onNameEdited(const Glib::ustring& path_txt, const Glib::ustring& n
 			// same, do nothing
 		} else if( std::find( names.begin(), names.end(), new_text ) == names.end() ) {
 			// create undo information
+			Glib::ustring title = _("Renamed '") + row[m_Cols.m_Name] + _("' to '") + new_text + _("'");
+			m_History.createUndoPoint( title, row[m_Cols.m_rpIcon] );
 			UndoAction& action = m_History.createAction();
 			action.setIcon( row[m_Cols.m_rpIcon] );
-			action.setName( _("Renamed '") + row[m_Cols.m_Name] + _("' to '") + new_text + _("'") );
+			action.setName( title );
 			storageRename( action.setUndoData( ACTION_RENAME ), new_text, row[m_Cols.m_Name] );
 			storageRename( action.setRedoData( ACTION_RENAME ), row[m_Cols.m_Name], new_text );
 			// change the name
@@ -622,13 +626,15 @@ void Project::onCreateFolder()
 
 		Glib::ustring name = row[m_Cols.m_Name];
 		// create undo information
+		Glib::ustring newfolder = _("Create new folder");
+		m_History.createUndoPoint( newfolder, row[m_Cols.m_rpIcon] );
 		UndoAction& action = m_History.createAction();
-		action.setName( _("Create new folder") );
+		action.setName( newfolder );
 		action.setIcon( row[m_Cols.m_rpIcon] );
 		Storage& su = action.setUndoData( ACTION_DELETE );
 		su.createItem("DELETE_NAME", "S");
 		su.setField( 0, name );
-		Storage& sr = action.setUndoData( ACTION_CREATEFOLDER );
+		Storage& sr = action.setRedoData( ACTION_CREATEFOLDER );
 		sr.createItem("CREATE_FOLDER", "SS");
 		sr.setField( 0, Glib::ustring( (*rit)[m_Cols.m_Name] ) );
 		sr.setField( 1, name );
@@ -662,8 +668,10 @@ void Project::onCreateObject()
 		Gtk::TreeModel::iterator newIt = createObject( rit, createUniqueName( typeName ), name );
 		Gtk::TreeModel::Row row = *newIt;
 		// create undo information
+		Glib::ustring newname = _("Create new ") + typeName;
+		m_History.createUndoPoint( newname, row[m_Cols.m_rpIcon] );
 		UndoAction& action = m_History.createAction();
-		action.setName( _("Create new ") + typeName );
+		action.setName( newname );
 		action.setIcon( row[m_Cols.m_rpIcon] );
 		// set undo delete
 		Storage& su = action.setUndoData( ACTION_DELETE );
@@ -671,10 +679,12 @@ void Project::onCreateObject()
 		su.setField( 0, Glib::ustring( row[m_Cols.m_Name] ) );
 		// set redo create empty
 		Storage& sr = action.setRedoData( ACTION_CREATE );
-		sr.createItem("CREATE_EMPTY", "SSS");
+		sr.createItem("CREATE_EMPTY", "SSSI");
 		sr.setField( 0, name ); // object type
 		sr.setField( 1, Glib::ustring( (*rit)[m_Cols.m_Name] ) ); // location
 		sr.setField( 2, Glib::ustring( row[m_Cols.m_Name] ) ); // create name
+		Polka::Object *obj = row[m_Cols.m_pObject];
+		sr.setField( 3, int(obj->funid()) ); // create funid
 		// start row name editor
 		Gtk::TreeModel::Path path(newIt);
 		expand_to_path(path);
@@ -743,8 +753,10 @@ void Project::deleteObject()
 	if( rit ) {
 		Gtk::TreeModel::Row row = *rit;
 		// create undo information
+		Glib::ustring title = _("Deleted '") + row[m_Cols.m_Name] + "'";
+		m_History.createUndoPoint( title, row[m_Cols.m_rpIcon] );
 		UndoAction& action = m_History.createAction();
-		action.setName( _("Deleted '") + row[m_Cols.m_Name] + "'");
+		action.setName( title );
 		action.setIcon( row[m_Cols.m_rpIcon] );
 		// create location string
 		Glib::ustring folder( (*row.parent())[m_Cols.m_Name] );
@@ -1030,11 +1042,13 @@ void Project::finishImportObjects()
 	m_pImportAction = 0;
 }
 
-Gtk::TreeModel::iterator Project::createNewObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type )
+Gtk::TreeModel::iterator Project::createNewObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type, guint32 funid )
 {
 	Gtk::TreeModel::iterator it = findLocation( location, m_rpTreeModel->children() );
 	assert( it ); // must exist if data is uncorrupted
+	m_ForceFUNID = funid;
 	Gtk::TreeModel::iterator newIt = createObject( it, name, type );
+	m_ForceFUNID = 0;
 
 	// select row 
 	Gtk::TreeModel::Path path(newIt);
@@ -1092,6 +1106,9 @@ Gtk::TreeModel::iterator Project::createObject( Gtk::TreeModel::iterator locatio
 
 guint32 Project::getNewFunid() const
 {
+	// force a particular id?
+	if( m_ForceFUNID ) return m_ForceFUNID;
+	// generate a random id
 	guint32 uid;
 	while(true) {
 		uid = g_random_int();
@@ -1192,8 +1209,9 @@ void Project::projectUndoAction( const std::string& action, Storage& s )
 			std::string objtype( s.stringField(0) );
 			std::string location( s.stringField(1) );
 			std::string name( s.stringField(2) );
+			guint32 funid = s.integerField(3);
 			// let project create named folder
-			createNewObject( location, name, objtype );
+			createNewObject( location, name, objtype, funid );
 		}
 		
 	} else if( action  == ACTION_OBJECTS ) {

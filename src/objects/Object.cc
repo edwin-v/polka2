@@ -190,7 +190,6 @@ bool Object::registerDependency( int id, const std::string& typespec, const Obje
 		// create undo
 		UndoAction& action = project().undoHistory().createAction( *this );
 		action.setName( m_Name + _(" dependency created") );
-		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 		Storage& su = action.setUndoData( DEP_ID );
 		su.createItem( DEP_REMOVE_ITEM, DEP_ITEMID_TYPE );
 		su.setField( 0, id );
@@ -239,7 +238,6 @@ bool Object::unregisterDependency( int id )
 		// create undo
 		UndoAction& action = project().undoHistory().createAction( *this );
 		action.setName( m_Name + _(" dependency removed") );
-		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 		Storage& su = action.setUndoData( DEP_ID );
 		su.createItem( DEP_CREATE_ITEM, DEP_ITEM_TYPE );
 		su.setField( 0, id );
@@ -297,7 +295,6 @@ bool Object::setDependency( int id, const Object *object )
 		// create undo
 		UndoAction& action = project().undoHistory().createAction( *this );
 		action.setName( m_Name + _(" dependency changed") );
-		action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 		Storage& su = action.setUndoData( DEP_ID );
 		su.createItem( DEP_CHANGE_ITEM, DEP_ITEM_TYPE );
 		su.setField( 0, id );
@@ -538,6 +535,7 @@ int Object::load( Storage& s )
 		if( !s.findItem("UNIQUE_ID") ) return Storage::EINVALIDDATA;
 		if( !s.checkFormat("I") ) return Storage::EINVALIDDATA;
 		m_FUNID = s.integerField(0);
+		std::cout << "FUNID restored: " << m_FUNID << std::endl;
 	} else {
 		// generate unique id
 		m_FUNID = m_Project.getNewFunid();

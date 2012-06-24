@@ -66,7 +66,6 @@ private:
 	void clearUndoRows();
 	void clearRedoRows();
 	void addLastUndoRow();
-	void changeLastUndoRow();
 	void undoAction();
 	void redoAction();
 	void updateButtonSensitivity();

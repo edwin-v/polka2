@@ -19,7 +19,7 @@ class UndoAction
 public:
 	// set data
 	void setName( Glib::ustring name );
-	void setIcon( Glib::RefPtr<Gdk::Pixbuf> icon );
+	void setIcon( const Glib::RefPtr<Gdk::Pixbuf>& icon );
 	Storage& setUndoData( std::string id );
 	Storage& setRedoData( std::string id );
 
@@ -27,6 +27,10 @@ public:
 	guint32 sourceId() const;
 	const Glib::ustring& name() const;
 	const Glib::RefPtr<Gdk::Pixbuf> icon() const;
+
+	bool isUserAction() const;
+	const Glib::ustring& userActionName() const;
+	const Glib::RefPtr<Gdk::Pixbuf> userActionIcon() const;
 
 	// access to data
 	const std::string& undoId() const;
@@ -44,12 +48,11 @@ protected:
 
 private:
 	friend class UndoHistory;
-	friend class UndoActionGroup;
 
-	Glib::ustring m_Name;
+	Glib::ustring m_Name, m_UserActionName;
 	UndoHistory& m_History;
 	guint32 m_SourceId;
-	Glib::RefPtr<Gdk::Pixbuf> m_refIcon;
+	Glib::RefPtr<Gdk::Pixbuf> m_refIcon, m_refUserActionIcon;
 
 	std::string m_UndoId, m_RedoId;
 	Storage m_UndoStorage, m_RedoStorage;

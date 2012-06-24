@@ -51,7 +51,6 @@ void Palette::setColor( int nr, double r, double g, double b )
 	// add redo data
 	Storage &sr = action.setRedoData( COLS_ID );
 	storeColors( sr, nr );
-	action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 
 	update();
 }
@@ -139,7 +138,6 @@ void Palette::swapColor( int c1, int c2 )
 	// create undo
 	UndoAction& action = project().undoHistory().createAction( *this );
 	action.setName( _("Swap palette color") );
-	action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 	
 	Storage& s = action.setUndoData( SWAP_ID );
 	s.createItem( SWAP_ITEM, "II" );
@@ -185,7 +183,6 @@ void Palette::createGradient( int c1, int c2 )
 	// gradient ok, store undo info
 	UndoAction& action = project().undoHistory().createAction( *this );
 	action.setName( _("Palette gradient") );
-	action.setIcon( ResourceManager::get().getIcon("media_msx2pal") );
 	// set all "inside" colors for undo
 	Storage& su = action.setUndoData( COLS_ID );
 	storeColors( su, c1+1, c2-1 );

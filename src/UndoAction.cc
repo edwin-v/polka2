@@ -11,6 +11,8 @@ UndoAction::UndoAction( UndoHistory& hist, guint32 suid )
 	: m_History( hist )
 {
 	m_SourceId = suid;
+	m_UndoStorage.setFileIdentification("", m_History.m_VersionMajor, m_History.m_VersionMinor);
+	m_RedoStorage.setFileIdentification("", m_History.m_VersionMajor, m_History.m_VersionMinor);
 	m_History.registerAction(this);
 }
 
@@ -32,13 +34,11 @@ guint32 UndoAction::sourceId() const
 void UndoAction::setName( Glib::ustring name )
 {
 	m_Name = name;
-	m_History.displayChange(this);
 }
 
-void UndoAction::setIcon( Glib::RefPtr<Gdk::Pixbuf> icon )
+void UndoAction::setIcon( const Glib::RefPtr<Gdk::Pixbuf>& icon )
 {
 	m_refIcon = icon;
-	m_History.displayChange(this);
 }
 
 Storage& UndoAction::setUndoData( std::string id )
@@ -61,6 +61,21 @@ const Glib::ustring& UndoAction::name() const
 const Glib::RefPtr<Gdk::Pixbuf> UndoAction::icon() const
 {
 	return m_refIcon;
+}
+
+bool UndoAction::isUserAction() const
+{
+	return !m_UserActionName.empty();
+}
+
+const Glib::ustring& UndoAction::userActionName() const
+{
+	return m_UserActionName;
+}
+
+const Glib::RefPtr<Gdk::Pixbuf> UndoAction::userActionIcon() const
+{
+	return m_refUserActionIcon;
 }
 
 const std::string& UndoAction::undoId() const

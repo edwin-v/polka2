@@ -78,7 +78,7 @@ public:
 	virtual void redo( const std::string& id, Storage& s );
 
 	const Gdk::Rectangle& lastUpdate() const;
-	virtual void startAction( Glib::ustring text, Glib::RefPtr<Gdk::Pixbuf> icon );
+	virtual void startAction( const Glib::ustring& text, const Glib::RefPtr<Gdk::Pixbuf>& icon );
 	virtual void finishAction();
 
 protected:
