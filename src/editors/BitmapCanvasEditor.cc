@@ -75,7 +75,7 @@ BitmapCanvasEditor::BitmapCanvasEditor( const std::string& _id )
 	  m_DragPrimary(false), m_ZoomMode(false),
 	  m_CurrentTool(-1), m_ActiveTool(-1), m_pToolMarker(0)
 {
-	add_events(Gdk::POINTER_MOTION_MASK | Gdk::KEY_PRESS_MASK);
+	add_events(Gdk::POINTER_MOTION_MASK | Gdk::KEY_PRESS_MASK | Gdk::KEY_RELEASE_MASK);
 	
 	set_can_focus(true);
 	set_hexpand();
