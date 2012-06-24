@@ -27,7 +27,9 @@ protected:
 	// helpers
 	bool updateAccel( guint id1, guint id2, bool first, guint mods, guint idflip = -1 );
 	bool guessAccel( guint id1, guint id2, guint mods, guint idflip = -1 );
-	guint accelEventButton( const GdkEventButton *event ) const;
+	static guint accelEventButton( const GdkEventButton *event );
+	static bool keyIsMod( guint key );
+	static guint keyToMod( guint key );
 	
 private:
 	std::string m_Id;

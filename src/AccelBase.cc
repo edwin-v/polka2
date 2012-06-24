@@ -203,7 +203,7 @@ bool AccelBase::guessAccel( guint id1, guint id2, guint mods, guint idflip )
  * @param event the GdkEventButton structure
  * @return the button id
  */
-guint AccelBase::accelEventButton( const GdkEventButton *event ) const
+guint AccelBase::accelEventButton( const GdkEventButton *event )
 {
 	return event->button + (event->type == GDK_2BUTTON_PRESS ? DBL_CLICK:0);
 }
@@ -217,6 +217,51 @@ int AccelBase::modCount( guint mods )
 	if( mods & MOD_LWIN  ) c++;
 	if( mods & MOD_RWIN  ) c++;
 	return c;
+}
+
+/**
+ * Helper to determine whether a pressed key is a valid modifier.
+ * 
+ * @param key key number
+ * @return true if the key is a valid modifier.
+ */
+bool AccelBase::keyIsMod( guint key )
+{
+	return key == GDK_KEY_Shift_L ||
+           key == GDK_KEY_Shift_R ||
+           key == GDK_KEY_Control_L ||
+           key == GDK_KEY_Control_R ||
+           key == GDK_KEY_Alt_L ||
+           key == GDK_KEY_Alt_R ||
+           key == GDK_KEY_Super_L ||
+           key == GDK_KEY_Super_R;
+}
+
+/**
+ * Convert a key value to a modifier.
+ * 
+ * @param key key number
+ * @return modifier or zero if if invalid.
+ */
+guint AccelBase::keyToMod( guint key )
+{
+	switch(key) {
+		case GDK_KEY_Shift_L:
+		case GDK_KEY_Shift_R:
+			return MOD_SHIFT;
+		case GDK_KEY_Control_L:
+		case GDK_KEY_Control_R:
+			return MOD_CTRL;
+		case GDK_KEY_Alt_L:
+		case GDK_KEY_Alt_R:
+			return MOD_ALT;
+		case GDK_KEY_Super_L:
+			return MOD_LWIN;
+		case GDK_KEY_Super_R:
+			return MOD_RWIN;
+	default:
+		return MOD_NONE;
+	}
 }
 
 } // namespace Polka

@@ -379,8 +379,8 @@ bool BitmapCanvasEditor::on_button_press_event(GdkEventButton *event)
 	grab_focus();
 	updateCoords( event->x, event->y );
 	
-	bool res = toolActivate(accelEventButton(event), 0, event->state);
-	if(res) return true;
+	if( toolActivate(accelEventButton(event), 0, event->state) )
+		return true;
 	
 	return CanvasView::on_button_press_event(event);
 }
@@ -389,42 +389,9 @@ bool BitmapCanvasEditor::on_motion_notify_event(GdkEventMotion* event)
 {
 	// keep track of mouse
 	updateCoords( event->x, event->y );
-	// notify movement to tool
-	bool res = false;
-	switch( m_CurrentTool ) {
-		case TOOL_SELECT:
-			res = rectSelectUpdate( event->state );
-			break;
-		case TOOL_EYEDROPPER:
-			res = eyeDropperUpdate( event->state );
-			break;
-		case TOOL_PEN:
-			res = penUpdate( event->state );
-			break;
-		case TOOL_BRUSH:
-			res = brushUpdate( event->state );
-			break;
-		case TOOL_CHANGECOLOR:
-			res = chgColorUpdate( event->state );
-			break;
-		case TOOL_LINE:
-			res = lineUpdate( event->state );
-			break;
-		case TOOL_RECT:
-			res = rectUpdate( event->state );
-			break;
-		case TOOL_FLIP:
-			res = flipUpdate( event->state );
-			break;
-		case TOOL_ROTATE:
-			res = rotateUpdate( event->state );
-			break;
-		default:
-			break;
-	}
-	
-	// exit if used
-	if( res ) return true;
+
+	if( toolUpdate(event->state) )
+		return true;
 
 	return CanvasView::on_motion_notify_event(event);
 }
@@ -504,6 +471,10 @@ bool BitmapCanvasEditor::on_key_press_event( GdkEventKey *event )
 	
 	if( toolActivate( 0, event->keyval, event->state ) )
 		return true;
+
+	if( keyIsMod(event->keyval) )
+		if( toolUpdate( event->state ^ keyToMod(event->keyval) ) )
+			return true;
 	
 	return CanvasView::on_key_press_event(event);
 }
@@ -513,6 +484,10 @@ bool BitmapCanvasEditor::on_key_release_event( GdkEventKey *event )
 	if( toolRelease(0, event->keyval, event->state) )
 		return true;
 		
+	if( keyIsMod(event->keyval) )
+		if( toolUpdate( event->state ^ keyToMod(event->keyval) ) )
+			return true;
+
 	return CanvasView::on_key_release_event(event);
 }
 
@@ -576,6 +551,44 @@ bool BitmapCanvasEditor::toolActivate( guint button, guint key, guint mods )
 		return true;
 	}
 	return false;
+}
+
+bool BitmapCanvasEditor::toolUpdate( guint mods )
+{
+	// notify movement to tool
+	bool res = false;
+	switch( m_CurrentTool ) {
+		case TOOL_SELECT:
+			res = rectSelectUpdate( mods );
+			break;
+		case TOOL_EYEDROPPER:
+			res = eyeDropperUpdate( mods );
+			break;
+		case TOOL_PEN:
+			res = penUpdate( mods );
+			break;
+		case TOOL_BRUSH:
+			res = brushUpdate( mods );
+			break;
+		case TOOL_CHANGECOLOR:
+			res = chgColorUpdate( mods );
+			break;
+		case TOOL_LINE:
+			res = lineUpdate( mods );
+			break;
+		case TOOL_RECT:
+			res = rectUpdate( mods );
+			break;
+		case TOOL_FLIP:
+			res = flipUpdate( mods );
+			break;
+		case TOOL_ROTATE:
+			res = rotateUpdate( mods );
+			break;
+		default:
+			break;
+	}
+	return res;
 }
 
 bool BitmapCanvasEditor::toolRelease( guint button, guint key, guint mods )

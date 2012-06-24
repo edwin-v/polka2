@@ -107,6 +107,7 @@ private:
 	Brush *m_pBrush, *m_pTempBrush, *m_pSelectionBrush;
 
 	bool toolActivate( guint button, guint key, guint mods );
+	bool toolUpdate( guint mods );
 	bool toolRelease( guint button, guint key, guint mods );
 
 	void screenDraw( int x, int y, bool use_brush = false );
