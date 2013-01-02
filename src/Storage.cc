@@ -238,6 +238,8 @@ Storage& Storage::createObject( const std::string& type )
 	m_CurItem = new Item( type, "O" );
 	m_Items.push_back( m_CurItem );
 	m_CurItem->object().setParent(this);
+	m_itCurItem = m_Items.end();
+	--m_itCurItem;
 	return m_CurItem->object();
 }
 
