@@ -1,6 +1,6 @@
 #include "ResourceManager.h"
-#include "icons/icons.c"
-#include "cursors/cursors.c"
+#include "icons.c"
+#include "cursors.c"
 
 
 namespace Polka {

@@ -1,44 +1,52 @@
 # Makefile for polka2 cursor resources
 
+BASE_LOCATION := ../..
+
+include $(BASE_LOCATION)/Makefile.platform.inc
+
 PNGCONV = gdk-pixbuf-csource
 PNGCONV_FLAGS = --raw
 
 pngs := $(wildcard *.png)
-PNGS := $(wildcard *.PNG)
-GDK_PIX := $(pngs:%.png=%.c) $(PNGS:%.PNG=%.c)
+GDK_PIX := $(pngs:%.png=$(CURSOR_LOCATION)/%.c)
+CURSOR_TARGET := $(CURSOR_LOCATION)/cursors.c
 
+# additional quotes for sed in unix shells
+ifneq ($(PLATFORM), win32)
+  SED_DLTR := '
+else
+  SED_DLTR :=
+endif
 
-all: cursors
+.PHONY: all dirs install
+
+all: dirs $(CURSOR_TARGET)
 
 clean:
 	@echo Removing cursors ...
-	@$(RM) -rf *.c
+	@$(RMDIR) $(CURSOR_LOCATION)
 
-cursors: $(GDK_PIX) Makefile
-	@echo "// include all cursor files" > cursors.c
-	@echo $(foreach cursor, $(GDK_PIX),\\n\#include \"cursors/$(cursor)\") >> cursors.c
-	@echo "\\n\\nstatic const struct { const char *name; const guint8 *pixbuf; const guint x; const guint y; } Cursors[] = {" >> cursors.c
-	@echo $(foreach cursor, $(GDK_PIX),\\n{ \"$(shell echo ${cursor} | sed s/_[0-9]*x[0-9]*\\.c//)\", \
-	                                          $(cursor:%.c=%), \
-	                                          $(shell echo ${cursor} | sed 's/.*_\([0-9]*\)x[0-9]*\.c/\1/'), \
-	                                          $(shell echo ${cursor} | sed 's/.*_[0-9]*x\([0-9]*\)\.c/\1/') }, \
-	       ) >> cursors.c
-	@echo "\\n{ \"EOL\", 0, 0, 0 } };\\n" >> cursors.c
+$(CURSOR_TARGET): $(GDK_PIX) Makefile
+	@echo Generating cursor resources...
+	@echo // include all cursor files > $(CURSOR_TARGET)
+	@$(ECHO) $(foreach cursor, $(GDK_PIX),$(NL)#include \"$(cursor:$(CURSOR_LOCATION)/%=%)\") >> $(CURSOR_TARGET)
+	@$(ECHO) "$(NL)$(NL)static const struct { const char *name; const guint8 *pixbuf; const guint x; const guint y; } Cursors[] = {" >> $(CURSOR_TARGET)
+	@$(ECHO) $(foreach cursor, $(GDK_PIX),$(NL){ \"$(shell echo $(cursor:$(CURSOR_LOCATION)/%.c=%) | $(SED) s/_[0-9]*x[0-9]*//)\", \
+	                                             $(cursor:$(CURSOR_LOCATION)/%.c=%), \
+	                                             $(shell echo $(cursor:$(CURSOR_LOCATION)/%.c=%) | $(SED) $(SED_DLTR)s/.*_\([0-9]*\)x[0-9]*/\1/$(SED_DLTR)), \
+	                                             $(shell echo $(cursor:$(CURSOR_LOCATION)/%.c=%) | $(SED) $(SED_DLTR)s/.*_[0-9]*x\([0-9]*\)/\1/$(SED_DLTR)) }, \
+	          ) >> $(CURSOR_TARGET)
+	@$(ECHO) "$(NL){ \"EOL\", 0, 0, 0 } };$(NL)" >> $(CURSOR_TARGET)
 	
-#	@echo "" > cursors.c
-#	@.for i in ${GDK_PIX}
-#	@	echo "#include "cursors/" ${i:Q} ".c\n"
-#	@.endfor
 		
 
-%.c: %.png
+$(CURSOR_LOCATION)/%.c: %.png
 	@$(PNGCONV) $(PNGCONV_FLAGS) --name $* $< > $@
 
-%.c: %.PNG
-	@$(PNGCONV) $(PNGCONV_FLAGS) --name $* $< > $@
+dirs:
+	@$(MKDIR) -p $(CURSOR_LOCATION)
 
 install: cursors
 	# install
 
-.PHONY: all cursors
 

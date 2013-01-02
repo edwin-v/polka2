@@ -1,40 +1,39 @@
 # Makefile for polka2 icon resources
 
+BASE_LOCATION := ../..
+
+include $(BASE_LOCATION)/Makefile.platform.inc
+
 PNGCONV = gdk-pixbuf-csource
 PNGCONV_FLAGS = --raw
 
 pngs := $(wildcard *.png)
-PNGS := $(wildcard *.PNG)
-GDK_PIX := $(pngs:%.png=%.c) $(PNGS:%.PNG=%.c)
+GDK_PIX := $(pngs:%.png=$(ICON_LOCATION)/%.c)
+ICON_TARGET := $(ICON_LOCATION)/icons.c
 
+.PHONY: all dirs install
 
-all: icons
+all: dirs $(ICON_TARGET)
 
 clean:
 	@echo Removing icons ...
-	@$(RM) -rf *.c
+	@$(RMDIR) $(ICON_LOCATION)
 
-icons: $(GDK_PIX) Makefile
-	@echo "// include all icon files" > icons.c
-	@echo $(foreach ICON, $(GDK_PIX),\\n\#include \"icons/$(ICON)\") >> icons.c
-	@echo "\\n\\nstatic const struct { const char *name; const guint8 *pixbuf; } Icons[] = {" >> icons.c
-	@echo $(foreach ICON, $(GDK_PIX),\\n{ \"$(ICON:%.c=%)\", $(ICON:%.c=%) },) >> icons.c
-	@echo "\\n{ \"EOL\", 0 } };\\n" >> icons.c
-	
-#	@echo "" > icons.c
-#	@.for i in ${GDK_PIX}
-#	@	echo "#include "icons/" ${i:Q} ".c\n"
-#	@.endfor
-		
+$(ICON_TARGET): $(GDK_PIX) Makefile
+	@echo Generating icon resources...
+	@echo // include all icon files > $(ICON_TARGET)
+	@$(ECHO) $(foreach ICON, $(GDK_PIX),$(NL)#include \"$(ICON:$(ICON_LOCATION)/%=%)\") >> $(ICON_TARGET)
+	@$(ECHO) "$(NL)$(NL)static const struct { const char *name; const guint8 *pixbuf; } Icons[] = {" >> $(ICON_TARGET)
+	@$(ECHO) $(foreach ICON, $(GDK_PIX),$(NL){ \"$(ICON:$(ICON_LOCATION)/%.c=%)\", $(ICON:$(ICON_LOCATION)/%.c=%) },) >> $(ICON_TARGET)
+	@$(ECHO) "$(NL){ \"EOL\", 0 } };$(NL)" >> $(ICON_TARGET)
 
-%.c: %.png
+$(ICON_LOCATION)/%.c: %.png
 	@$(PNGCONV) $(PNGCONV_FLAGS) --name $* $< > $@
 
-%.c: %.PNG
-	@$(PNGCONV) $(PNGCONV_FLAGS) --name $* $< > $@
+dirs:
+	@$(MKDIR) -p $(ICON_LOCATION)
 
 install: icons
 	# install
 
-.PHONY: all icons
 
