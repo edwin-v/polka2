@@ -15,7 +15,7 @@ class Brush : public Pen
 {
 public:
 	Brush( int width, int height, int offsetx = NOOFFS, int offsety = NOOFFS );
-	~Brush();
+	virtual ~Brush();
 	
 	virtual const int *data() const;
 	virtual int *data();
@@ -43,7 +43,7 @@ class Shape : public Brush
 {
 public:
 	Shape( int width, int height, int offsetx = NOOFFS, int offsety = NOOFFS );
-	~Shape();
+	virtual ~Shape();
 	
 	// recolor
 	virtual void setColor( int col );

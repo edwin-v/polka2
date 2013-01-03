@@ -77,9 +77,10 @@ Cairo::RefPtr<Cairo::ImageSurface> Brush::getImage( const Palette& pal )
 	// draw centre point with alpha
 	Cairo::RefPtr<Cairo::Context> cc = Cairo::Context::create(m_refImage);
 	cc->set_antialias(Cairo::ANTIALIAS_NONE);
-	cc->move_to(m_DX,m_DY+0.5);
-	cc->set_source_rgba(1.0, 1.0, 1.0, 0.25);
-	cc->line_to(m_DX, m_DY+0.5);
+	// activate alpha
+	cc->move_to(0.5, 0.5);
+	cc->set_source_rgba(0.0, 0.0, 0.0, 0.5);
+	cc->line_to(0.6, 0.6);
 	cc->stroke();
 	// write data
 	unsigned int p = 0, addr;
@@ -212,4 +213,3 @@ void Shape::setTransparentColor( int col )
 }
 
 } // namespace Polka
-
