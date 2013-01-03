@@ -8,7 +8,7 @@ class Pen
 {
 public:
 	Pen();
-	~Pen();
+	virtual ~Pen();
 	
 	// pen data access
 	int width() const;

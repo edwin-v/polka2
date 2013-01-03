@@ -39,7 +39,7 @@ Bmp16CanvasFactory::Bmp16CanvasFactory()
 {
 }
 
-bool Bmp16CanvasFactory::canCreate( Project& _prj ) const
+bool Bmp16CanvasFactory::canCreate( const Project& _prj ) const
 {
 	return _prj.findObjectOfTypes(DEP_PAL_TYPES) != 0;
 }

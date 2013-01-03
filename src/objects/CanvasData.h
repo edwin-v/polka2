@@ -16,7 +16,7 @@ class CanvasData
 {
 public:
 	CanvasData( Canvas& canvas, int w, int h, int depth );
-	~CanvasData();
+	virtual ~CanvasData();
 
 	// dimensions
 	void setSize( int w, int h );

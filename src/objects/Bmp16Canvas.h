@@ -24,7 +24,7 @@ class Bmp16CanvasFactory : public ObjectManager::ObjectFactory
 public:
 	Bmp16CanvasFactory();
 
-	bool canCreate( Project& _prj ) const;
+	bool canCreate( const Project& _prj ) const;
 	Object *create( Project& _prj ) const;
 	ObjectPropertySheet *createPropertySheet( Object& _obj, int nr ) const;
 };
