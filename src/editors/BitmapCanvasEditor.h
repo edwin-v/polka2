@@ -64,7 +64,7 @@ protected:
 	OverlayPainter m_Overlay;
 
 private:
-	bool m_DragPrimary;
+	bool m_DragTool, m_PrimaryTool;
 
 	// processed coordinates
 	int m_MouseX, m_MouseY, m_LastMouseX, m_LastMouseY;
@@ -97,7 +97,7 @@ private:
 
 	// tool variables
 	int m_ToolMode;
-	bool m_TileSelect, m_UseFGColor;
+	bool m_TileSelect;
 	int m_FGColor, m_BGColor;
 	Pen m_Pen;
 	int m_PenColor;
