@@ -5,6 +5,7 @@
 #include "Functions.h"
 #include "Storage.h"
 #include "StorageHelpers.h"
+#include "ResourceManager.h"
 #include <iostream>
 #include <cassert>
 
@@ -44,6 +45,8 @@ bool BitmapScreenImporter::initImport( const std::string& filename )
 	// possible pallette?
 	if( m_FileSize == 32 )  
 		return tryOpenPalette(file);
+	else if( m_FileSize == 48 )  
+		return tryOpenG9kPalette(file);
 	
 	// bsaved file check
 	if( tryOpenBSaved(file) ) {
@@ -76,8 +79,26 @@ bool BitmapScreenImporter::tryOpenPalette( ifstream& stream )
 	}
 	// good palette data
 	m_PaletteOffset = 0;
+	m_PaletteG9k = false;
 	m_Preview.addType( _("MSX2 Palette"), true );
 	m_Preview.setTargetText( _("Creates a single MSX2\nPalette object.") );
+	return true;
+}
+
+bool BitmapScreenImporter::tryOpenG9kPalette( ifstream& stream )
+{
+	m_pData = new char[48];
+	stream.read( m_pData, 48 );
+	// check for valid data 
+	if( !checkG9kPalette( m_pData ) )  {
+		cleanUp();
+		return false;
+	}
+	// good palette data
+	m_PaletteOffset = 0;
+	m_PaletteG9k = true;
+	m_Preview.addType( _("Gfx9000 Palette"), true );
+	m_Preview.setTargetText( _("Creates a single Gfx9000\nPalette object.") );
 	return true;
 }
 
@@ -180,6 +201,15 @@ bool BitmapScreenImporter::checkPalette( const char *data ) const
 	return hasdata;
 }
 
+bool BitmapScreenImporter::checkG9kPalette( const char *data ) const
+{
+	// check if data is all lower than 32 and not all zero
+	for( int i = 0; i<48 ; i+=1 )
+		if( data[i] >= 32 )
+			return false;
+	return true;
+}
+
 BitmapScreenImporter::BitmapType BitmapScreenImporter::getBitmapTypeByFileName()
 {
 	char last = m_FileName[m_FileName.size()-1];
@@ -218,50 +248,54 @@ bool BitmapScreenImporter::importToProject( Project& project )
 {
 	// default import name
 	Glib::ustring palname, name = getNameFromFilename(m_FileName);
+	Palette *pal = 0;
 	
 	// create import storage for objects
-	Storage& impS = project.createImportObjects(name);
+	project.undoHistory().createUndoPoint( _("Import of ") + name, ResourceManager::get().getIcon("import") );
 
 	// first import palette
 	if( m_PaletteOffset >= 0 ) {
+		// create a new palette
+		palname = project.createUniqueName( name + _(" Palette") );
+
+		// space for palette for temporary storage
+		double r[16], g[16], b[16];
 
 		// create new palette object
-		Storage& s = impS.createObject("PAL2");
-		palname = project.createUniqueName( name + _(" Palette") );
-		storageSetObjectName( s, palname );
-		s.createItem("DEPTH", "I");
-		s.setField(0, 3);
-		s.createItem( "RGB", "[FFF]" );
-		int addr = m_PaletteOffset;
-		for( int c = 0; c < 16; c++ ) {
-			s.setField( c, 0, double( (m_pData[addr  ] >> 4) & 7 )/7.0 );
-			s.setField( c, 2, double(  m_pData[addr++]       & 7 )/7.0 );
-			s.setField( c, 1, double(  m_pData[addr++]       & 7 )/7.0 );
+		if( m_PaletteG9k ) {
+			int addr = m_PaletteOffset;
+			for( int c = 0; c < 16; c++ ) {
+				r[c] = double(m_pData[addr++]) / 31.0;
+				g[c] = double(m_pData[addr++]) / 31.0;
+				b[c] = double(m_pData[addr++]) / 31.0;
+			}
+			pal = dynamic_cast<Palette*>( project.createNewObject("PAL/16/G9K") );
+		} else {
+			int addr = m_PaletteOffset;
+			for( int c = 0; c < 16; c++ ) {
+				r[c] = double( (m_pData[addr  ] >> 4) & 7 )/7.0;
+				b[c] = double(  m_pData[addr++]       & 7 )/7.0;
+				g[c] = double(  m_pData[addr++]       & 7 )/7.0;
+			}
+			pal = dynamic_cast<Palette*>( project.createNewObject("PAL/16/MSX2") );
 		}
+		
+		pal->setColors( 0, 16, r, g, b );
+		project.setObjectName( *pal, palname );
 		
 	} else if( m_PossibleTypes.size() ) {
 		// no palette exists, create a default one if required
 		switch( m_PossibleTypes[m_Preview.targetId()] ) {
 			case SC5:
 			{
-				if( !project.checkObjectRequirements("BMP16CANVAS") ) {
-					Storage& s = impS.createObject("PAL2");
+				if( !project.checkObjectRequirements("CANVAS/16/BMP") ) {
+					pal = dynamic_cast<Palette*>( project.createNewObject("PAL/16/MSX2") );
 					palname = project.createUniqueName( name + _(" Palette") );
-					storageSetObjectName( s, palname );
-					s.createItem("DEPTH", "I");
-					s.setField(0, 3);
-					// create dummy color
-					s.createItem("FIRST_COLOR", "I");
-					s.setField(0, 0);
-					s.createItem( "RGB", "[FFF]" );
-					s.setField(0, 0.0);
-					s.setField(1, 0.0);
-					s.setField(2, 0.0);
+					project.setObjectName( *pal, palname );
 				} else {
 					// get name of existing palette
-					Polka::Object *obj = project.findObjectOfTypes("PAL2,PAL1,PAL9");
-					assert(obj);
-					palname = obj->name();
+					pal = dynamic_cast<Palette*>( project.findObjectOfTypes("PAL/16/") );
+					palname = pal->name();
 				}
 				break;
 			}
@@ -269,6 +303,8 @@ bool BitmapScreenImporter::importToProject( Project& project )
 				break;
 		}
 	}
+	
+	assert(pal); // should always exist at this point
 	
 	// create canvas
 	if( m_PossibleTypes.size() ) {
@@ -283,23 +319,16 @@ bool BitmapScreenImporter::importToProject( Project& project )
 				}
 				int vres = 1 + (m_EndAddress >> 7);
 
-				Storage& s = impS.createObject("BMP16CANVAS");
+				Canvas *canvas = dynamic_cast<Canvas*>( project.createNewObject("CANVAS/16/BMP") );
 				std::string scname = project.createUniqueName( name + _(" Canvas") );
-				storageSetObjectName( s, scname );
-			
+				project.setObjectName( *canvas, scname );
+				canvas->setPalette( *pal );
+
 				// size
-				Storage& sm = s.createObject("DATA_MAIN");
-				sm.createItem("DATA_SIZE", "II");
-				sm.setField( 0, 256 );
-				sm.setField( 1, vres );
-			
-				// palette
-				sm.createItem("PALETTE", "S");
-				sm.setField( 0, palname );
-				
+				canvas->resize( 256, vres, 1, 1, true );
+
 				// data
-				sm.createItem("DATA", "S");
-				std::string& data = sm.setDataField(0);
+				std::string data;
 				data.resize( 256*startline + startpix, 0 );
 
 				int addr = 0;
@@ -309,6 +338,7 @@ bool BitmapScreenImporter::importToProject( Project& project )
 				}
 				
 				data.resize( 256*vres, 0 );
+				canvas->setData( 0, 0, data.c_str(), 256, vres );
 				
 				break;
 			}
@@ -322,28 +352,16 @@ bool BitmapScreenImporter::importToProject( Project& project )
 				}
 				int vres = 1 + (m_EndAddress >> 7);
 
-				Storage& s = impS.createObject("BMP16CANVAS");
+				Canvas *canvas = dynamic_cast<Canvas*>( project.createNewObject("CANVAS/16/BMP") );
 				std::string scname = project.createUniqueName( name + _(" Canvas") );
-				storageSetObjectName( s, scname );
-				
-				// sc7 scale
-				s.createItem("PIXEL_SCALE", "II");
-				s.setField( 0, 1 );
-				s.setField( 1, 2 );
-			
+				project.setObjectName( *canvas, scname );
+				canvas->setPalette( *pal );
+
 				// size
-				Storage& sm = s.createObject("DATA_MAIN");
-				sm.createItem("DATA_SIZE", "II");
-				sm.setField( 0, 512 );
-				sm.setField( 1, vres );
-			
-				// palette
-				sm.createItem("PALETTE", "S");
-				sm.setField( 0, palname );
+				canvas->resize( 512, vres, 1, 2, true );
 				
 				// data
-				sm.createItem("DATA", "S");
-				std::string& data = sm.setDataField(0);
+				std::string data;
 				data.resize( 512*startline + startpix, 0 );
 
 				int addr = 0;
@@ -353,6 +371,7 @@ bool BitmapScreenImporter::importToProject( Project& project )
 				}
 				
 				data.resize( 512*vres, 0 );
+				canvas->setData( 0, 0, data.c_str(), 512, vres );
 				
 				break;
 			}
@@ -361,7 +380,6 @@ bool BitmapScreenImporter::importToProject( Project& project )
 		}
 	}
 	
-	project.finishImportObjects();
 	return true;
 }
 

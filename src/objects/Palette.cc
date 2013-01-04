@@ -55,6 +55,29 @@ void Palette::setColor( int nr, double r, double g, double b )
 	update();
 }
 
+void Palette::setColors( int nr, int count, double r[], double g[], double b[] )
+{
+	// gradient ok, store undo info
+	UndoAction& action = project().undoHistory().createAction( *this );
+	action.setName( _("Change palette colors") );
+	// set all colors for undo
+	Storage& su = action.setUndoData( COLS_ID );
+	storeColors( su, nr, nr+count-1 );
+
+	// change colors
+	for( int c = nr; c < nr+count; c++ ) {
+		m_Red[c] = r[c-nr];
+		m_Green[c] = g[c-nr];
+		m_Blue[c] = b[c-nr];
+	}
+
+	// set redo action
+	Storage& sr = action.setRedoData( COLS_ID );
+	storeColors( sr, nr, nr+count-1 );
+	
+	changeDisplayColors( nr, nr+count-1 );
+}
+
 int Palette::depth() const
 {
 	return m_Depth;

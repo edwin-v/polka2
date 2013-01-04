@@ -4,6 +4,7 @@
 #include "Storage.h"
 #include "Functions.h"
 #include "StorageHelpers.h"
+#include "ResourceManager.h"
 #include <gtkmm/messagedialog.h>
 #include <glibmm/i18n.h>
 #include <iostream>
@@ -662,34 +663,54 @@ void Project::onCreateObject()
 	Gtk::TreeModel::iterator rit = get_selection()->get_selected();
 	
 	if( rit ) {
+		// interactive undo  point
 		ObjectManager& om = ObjectManager::get();
+		Glib::ustring undotext = _("Create new ") + om.nameFromId( name );
+		m_History.createUndoPoint( undotext, om.iconFromId( name) );
 		// create object of type "name"
-		Glib::ustring typeName = om.nameFromId( name );
-		Gtk::TreeModel::iterator newIt = createObject( rit, createUniqueName( typeName ), name );
-		Gtk::TreeModel::Row row = *newIt;
-		// create undo information
-		Glib::ustring newname = _("Create new ") + typeName;
-		m_History.createUndoPoint( newname, row[m_Cols.m_rpIcon] );
-		UndoAction& action = m_History.createAction();
-		action.setName( newname );
-		action.setIcon( row[m_Cols.m_rpIcon] );
-		// set undo delete
-		Storage& su = action.setUndoData( ACTION_DELETE );
-		su.createItem("DELETE_NAME", "S");
-		su.setField( 0, Glib::ustring( row[m_Cols.m_Name] ) );
-		// set redo create empty
-		Storage& sr = action.setRedoData( ACTION_CREATE );
-		sr.createItem("CREATE_EMPTY", "SSSI");
-		sr.setField( 0, name ); // object type
-		sr.setField( 1, Glib::ustring( (*rit)[m_Cols.m_Name] ) ); // location
-		sr.setField( 2, Glib::ustring( row[m_Cols.m_Name] ) ); // create name
-		Polka::Object *obj = row[m_Cols.m_pObject];
-		sr.setField( 3, int(obj->funid()) ); // create funid
+		Gtk::TreeModel::iterator newIt = createObjectWithUndoAction( rit, name );
 		// start row name editor
 		Gtk::TreeModel::Path path(newIt);
 		expand_to_path(path);
 		set_cursor(path, *get_column(0), *m_pNameCellRenderer, true);
 	}
+}
+
+Polka::Object *Project::createNewObject( const std::string& id )
+{
+	Gtk::TreeModel::iterator location = findBaseLocation(id);
+	if( !location ) return 0;
+	location = createObjectWithUndoAction( location, id );
+	if( !location ) return 0;
+	return (*location)[m_Cols.m_pObject];
+}
+
+Gtk::TreeModel::iterator Project::createObjectWithUndoAction( Gtk::TreeModel::iterator location, const std::string& id )
+{
+	ObjectManager& om = ObjectManager::get();
+	// create object of type "name"
+	Glib::ustring typeName = om.nameFromId( id );
+	Gtk::TreeModel::iterator newIt = createObject( location, createUniqueName( typeName ), id );
+	Gtk::TreeModel::Row row = *newIt;
+	// create undo information
+	Glib::ustring newname = _("Create new ") + typeName;
+	UndoAction& action = m_History.createAction();
+	action.setName( newname );
+	action.setIcon( row[m_Cols.m_rpIcon] );
+	// set undo delete
+	Storage& su = action.setUndoData( ACTION_DELETE );
+	su.createItem("DELETE_NAME", "S");
+	su.setField( 0, Glib::ustring( row[m_Cols.m_Name] ) );
+	// set redo create empty
+	Storage& sr = action.setRedoData( ACTION_CREATE );
+	sr.createItem("CREATE_EMPTY", "SSSI");
+	sr.setField( 0, id ); // object type
+	sr.setField( 1, Glib::ustring( (*location)[m_Cols.m_Name] ) ); // location
+	sr.setField( 2, Glib::ustring( row[m_Cols.m_Name] ) ); // create name
+	Polka::Object *obj = row[m_Cols.m_pObject];
+	sr.setField( 3, int(obj->funid()) ); // create funid
+	
+	return newIt;
 }
 
 Gtk::TreeModel::Row Project::createLocation( const std::vector<Glib::ustring>& path, const std::string& baseType )
@@ -977,69 +998,6 @@ Gtk::TreeModel::iterator Project::createFolder( Gtk::TreeModel::iterator locatio
 	m_SignalTreeUpdate.emit();
 	
 	return newIt;
-}
-
-Storage& Project::createImportObjects( const std::string& name )
-{
-	// must not have a current import action
-	assert( m_pImportAction == 0 );
-
-	// create undo action for import storage information
-	m_pImportAction = &m_History.createAction();
-	if( name.empty() ) {
-		m_pImportAction->setName( _("Import"));
-	} else {
-		m_pImportAction->setName( _("Imported '") + name + "'");
-	}
-	//action.setIcon( row[m_Cols.m_rpIcon] ); TODO
-	
-	return m_pImportAction->setRedoData( ACTION_OBJECTS );
-}
-
-void Project::finishImportObjects()
-{
-	assert( m_pImportAction != 0 );
-
-	Storage& us = m_pImportAction->setUndoData( ACTION_MULTIPLE );
-	// add locations to all objects
-	Storage& s = m_pImportAction->redoData();
-	std::vector<std::string> objs;
-	bool readObjs = s.findObject();
-	while( readObjs ) {
-		const std::string& objtype = s.objectType();
-		Storage& objS = s.object();
-		
-		// default location	
-		Glib::ustring loc = ObjectManager::get().objectLocation( objtype );
-		
-		if( !loc.empty() ) {
-			// real object, add location
-			objS.createItem("LOCATION", "S");
-			objS.setField( 0, loc );
-			
-			// get object name
-			if( !objS.findItem("OBJECT_NAME") ) continue;
-
-			// store name for undo
-			objs.push_back( objS.stringField(0) );
-		}
-		
-		// next object
-		readObjs = s.findNextObject();		
-	}
-	// add delete actions for undo in reverse order
-	while( objs.size() ) {
-		// delete object on undo
-		Storage& ds = us.createObject( ACTION_DELETE );
-		ds.createItem("DELETE_NAME", "S");
-		ds.setField( 0, objs.back() );
-		objs.pop_back();
-	}
-	
-	// execute redo
-	projectRedo( ACTION_OBJECTS, s );
-	
-	m_pImportAction = 0;
 }
 
 Gtk::TreeModel::iterator Project::createNewObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type, guint32 funid )

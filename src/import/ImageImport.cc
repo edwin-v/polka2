@@ -4,7 +4,7 @@
 #include "Project.h"
 #include "Functions.h"
 #include "Storage.h"
-#include "StorageHelpers.h"
+#include "ResourceManager.h"
 #include <gtkmm/table.h>
 #include <cairomm/surface.h>
 #include <iostream>
@@ -121,43 +121,48 @@ bool ImageImporter::importToProject( Project& project )
 
 	// create import storage for objects
 	Glib::ustring palname, name = getNameFromFilename(m_FileName);
-	Storage& impS = project.createImportObjects(name);
+	
+	project.undoHistory().createUndoPoint( _("Raw import of ") + name, ResourceManager::get().getIcon("import") ); 
 
 	// create a new palette for this
-	Storage& s = impS.createObject(palid);
+	Palette *pal = dynamic_cast<Palette*>( project.createNewObject(palid) );
+	if( !pal ) return false;
 	palname = project.createUniqueName( name + _(" Palette") );
-	storageSetObjectName( s, palname );
-	s.createItem( "RGB", "[FFF]" );
+	project.setObjectName( *pal, palname );
+	// assign colors
+	double *r, *g, *b;
+	r = new double[ cr.palSize() ];
+	g = new double[ cr.palSize() ];
+	b = new double[ cr.palSize() ];
 	for( int c = 0; c < cr.palSize(); c++ ) {
-		s.setField( c, 0, cr.palRed(c) );
-		s.setField( c, 1, cr.palGreen(c) );
-		s.setField( c, 2, cr.palBlue(c) );
+		r[c] = cr.palRed(c);
+		g[c] = cr.palGreen(c);
+		b[c] = cr.palBlue(c);
 	}
+	pal->setColors( 0, cr.palSize(), r, g, b );
+	delete [] r;
+	delete [] g;
+	delete [] b;
 	
 	// create canvas
 	// calculate the number of lines
-	Storage& s2 = impS.createObject( cr.getTargetCanvas(palid) );
+	Canvas *canvas = dynamic_cast<Canvas*>( project.createNewObject( cr.getTargetCanvas(palid) ) );
 	std::string scname = project.createUniqueName( name + _(" Canvas") );
-	storageSetObjectName( s2, scname );
+	project.setObjectName( *canvas, scname );
+
+	// set palette
+	canvas->setPalette( *pal );
 
 	// size
-	Storage& sm = s2.createObject("DATA_MAIN");
-	sm.createItem("DATA_SIZE", "II");
-	sm.setField( 0, w );
-	sm.setField( 1, h );
+	canvas->resize( w, h, 1, 1, true );
 
-	// palette
-	sm.createItem("PALETTE", "S");
-	sm.setField( 0, palname );
-	
 	// data
-	sm.createItem("DATA", "S");
-	std::string& cdata = sm.setDataField(0);
+	std::string cdata;
 	cdata.assign( (char*)data, w*h );
+	canvas->setData( 0, 0, cdata.c_str(), w, h );
 	
 	delete [] data;
 	
-	project.finishImportObjects();
 	return true;
 }
 

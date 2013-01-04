@@ -58,6 +58,8 @@ public:
 	virtual void flip( int x, int y, int w, int h, bool vertical = false );
 	virtual void rotate( int x, int y, int sz, bool ccw = false );
 
+	virtual void setData( int x, int y, const char *data, int w, int h );
+
 	// clipping
 	void setClipRectangle( int x = -1, int y = -1, int w = -1, int h = -1 );
 	void clipRectangle( int& x1, int& y1, int& x2, int& y2 );

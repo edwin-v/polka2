@@ -42,6 +42,8 @@ public:
 	virtual void flip( int x1, int y1, int x2, int y2, bool vertical = false );
 	virtual void rotate( int x, int y, int sz, bool ccw = false );
 
+	virtual void setData( int x, int y, const char *data, int w, int h );
+
 	virtual void applyBrush( int x, int y, const Pen& pen );
 
 	virtual Brush *createBrushFromRect( int x, int y, int w, int h, int bg );

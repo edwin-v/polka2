@@ -63,8 +63,7 @@ public:
 	// object creation
 	Glib::ustring createUniqueName( const Glib::ustring& prefix );
 	bool checkObjectRequirements( const std::string& id );
-	Storage& createImportObjects( const std::string& name = "" );
-	void finishImportObjects();
+	Polka::Object *createNewObject( const std::string& id );
 	guint32 getNewFunid() const;
 
 	// Edit signal
@@ -136,6 +135,7 @@ private:
 	void createFolder( const Glib::ustring& location, const Glib::ustring& name );
 	Gtk::TreeModel::iterator createFolder( Gtk::TreeModel::iterator location, const Glib::ustring& name );
 	Gtk::TreeModel::iterator createNewObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type, guint32 funid = 0 );
+	Gtk::TreeModel::iterator createObjectWithUndoAction( Gtk::TreeModel::iterator location, const std::string& type );
 	Gtk::TreeModel::iterator createObject( const Glib::ustring& location, const Glib::ustring& name, const std::string& type, Storage& s );
 	Gtk::TreeModel::iterator createObject( Gtk::TreeModel::iterator location, const Glib::ustring& name, const std::string& type );
 	void deleteLocation( const Glib::ustring& name );

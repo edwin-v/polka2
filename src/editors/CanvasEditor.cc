@@ -89,7 +89,7 @@ const AccelManager::DefinitionMap ACCELS = {
 // TOOL EYEDROPPER
 // Pick FG
 	{ // Incremental id                Text id               Pref Gui location                                   Description
-	     AccCls::ACC_COLORPICK_FG, "colorpick_fg",       { _("Tools"), _("Color picker"), _("Pick foreground") }, _("Use the eyedropper tool to pick the foreground color from the canvas."),
+	     AccCls::ACC_COLORPICK_FG,     "colorpick_fg",       { _("Tools"), _("Color picker"), _("Pick foreground") }, _("Use the eyedropper tool to pick the foreground color from the canvas."),
 	  // Type                          Allowed links
 	     DEF_ACTION,                   {"activate_pri"},
 	  // Link                          Button  Key           Modifiers
@@ -152,7 +152,7 @@ const AccelManager::DefinitionMap ACCELS = {
 	     DEF_ACTION,                   {"activate_sec", "draw_bg"},
 	  // Link                          Button  Key           Modifiers
 	     "draw_bg",                    1,      0,            MOD_CTRL },
-// Flip foreground/background color
+// Only draw 45 degree angles
 	{ // Incremental id                Text id               Pref Gui location                                   Description
 	     AccCls::ACC_MOD_LINE_ANGLE,   "line_angle",       { _("Tools"), _("Line"), _("Restrict angles") },    _("Restrict lines angles to fixed ratios."),
 	  // Type                          Allowed links

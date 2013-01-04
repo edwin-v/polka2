@@ -203,7 +203,6 @@ bool Canvas::getClipped() const
 
 void Canvas::resize( int w, int h, int horscale, int verscale, bool store_undo )
 {
-	//ResourceManager& rm = ResourceManager::get();
 	ObjectManager& om = ObjectManager::get();
 	bool mod = false;
 	if( m_pData->width() != w || m_pData->height() != h ) {
@@ -243,6 +242,10 @@ void Canvas::resize( int w, int h, int horscale, int verscale, bool store_undo )
 		if( !clipped ) setClipRectangle();
 		// undo
 	}
+
+	if( horscale == -1 ) horscale = m_PixelHScale;
+	if( verscale == -1 ) verscale = m_PixelVScale;
+
 	if( horscale != m_PixelHScale || verscale != m_PixelVScale ) {
 
 		if( store_undo ) {
@@ -419,6 +422,14 @@ Brush *Canvas::createBrushFromRect( int x, int y, int w, int h, int bg )
 	return m_pData->createBrushFromRect( x, y, w, h, bg );
 }
 
+void Canvas::setData( int x, int y, const char *data, int w, int h )
+{
+	startAction( _("Change canvas data"), ObjectManager::get().iconFromId(id()) );
+	m_pData->setData( x, y, data, w, h );
+	addChangedRect( Gdk::Rectangle(x, y, w, h) );
+	finishAction();
+	update(false);
+}
 
 // storage
 int Canvas::store( Storage& s )

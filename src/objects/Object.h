@@ -38,9 +38,6 @@ public:
 	const Glib::ustring& comments() const;
 	const std::string& dependencyType( int id ) const;
 	
-	void setName( const Glib::ustring& name );
-	void setComments( const Glib::ustring& text );
-
 	// ownership
 	Project& project();
 	bool canRemove() const;
@@ -88,6 +85,10 @@ private:
 	bool m_AllowUpdateDelay;
 	// object editor
 	Editor *m_pEditor;
+
+	// change identification
+	void setName( const Glib::ustring& name );
+	void setComments( const Glib::ustring& text );
 	
 	// signal dependency selection
 	void setDependencyOf( const Object *object );
@@ -101,6 +102,7 @@ private:
 	void attachEditor( Editor* editor );
 	void detachEditor( Editor* editor );
 	
+	friend class Project;
 	friend class Editor;
 	// friend ObjectPropertiesDialog so it can display internal
 	friend class ObjectPropertiesDialog;

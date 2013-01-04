@@ -106,9 +106,9 @@ ColorReducer::ColorReducer()
 	  m_Root(this)
 {
 	// TEMP: Add targets
-	//Targets["PAL1"] = { 16, 3, "BMP16CANVAS"} );
-	Targets["PAL2"] = { 16, 3, "BMP16CANVAS"};
-	Targets["PAL9"] = { 16, 5, "BMP16CANVAS"};
+	//Targets["PAL/16/MSX1"] = { 16, 3, "CANVAS/16/BMP"} );
+	Targets["PAL/16/MSX2"] = { 16, 3, "CANVAS/16/BMP"};
+	Targets["PAL/16/G9K"] = { 16, 5, "CANVAS/16/BMP"};
 }
 
 ColorReducer::~ColorReducer()

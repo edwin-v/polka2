@@ -10,7 +10,6 @@
 #include <cassert>
 #include <iostream>
 
-
 namespace Polka {
 
 CanvasData::CanvasData( Canvas& canvas, int w, int h, int depth )
@@ -427,6 +426,26 @@ void CanvasData::rotate( int x, int y, int sz, bool ccw )
 	
 }
 
+void CanvasData::setData( int x, int y, const char *data, int w, int h )
+{
+	// clip
+	int delta = 0;
+	if( x < 0 ) {
+		delta = -x;
+		x = 0;
+	}
+
+	// apply raw data to image
+	for( int yr = y; yr < y+h; yr++ ) {
+		// clip
+		if( yr < 0 || yr >= m_Height ) continue;
+		char *dest = m_Data[yr] + (x+delta)*m_PixSize;
+		memcpy(dest, data, (w-delta)*m_PixSize);
+		data += w*m_PixSize;
+	}
+}
+
+
 Brush *CanvasData::createBrushFromRect( int x, int y, int w, int h, int bg )
 {
 	// count colours
@@ -572,9 +591,12 @@ const Gdk::Rectangle CanvasData::restoreRect( Storage& s )
 		if( s.findItem("DATA") ) {
 			const std::string& dat = s.dataField(0);
 			const char *src = dat.c_str();
-			// since only used internally, assume correct size
+			// make sure to fit size
+			int size = r.get_width();
+			if( r.get_x()+size > m_Width ) size = m_Width-r.get_x();
 			for( int i = r.get_y(); i < r.get_y()+r.get_height(); i++ ) {
-				memcpy( m_Data[i] + r.get_x()*m_PixSize, src, r.get_width()*m_PixSize );
+				if( i >= int(m_Data.size()) ) break;
+				memcpy( m_Data[i] + r.get_x()*m_PixSize, src, size*m_PixSize );
 				src += r.get_width()*m_PixSize;
 			}
 		}

@@ -5,6 +5,7 @@
 #include "Functions.h"
 #include "Storage.h"
 #include "StorageHelpers.h"
+#include "ResourceManager.h"
 #include <gtkmm/table.h>
 #include <iostream>
 #include <cassert>
@@ -72,30 +73,23 @@ bool RawImporter::importToProject( Project& project )
 	file.seekg( m_Preview.offset() );
 
 	// default import name
-	Glib::ustring palname, name = m_FileName;
+	Glib::ustring palname, name = getNameFromFilename(m_FileName);
 	
-	// create import storage for objects
-	Storage& impS = project.createImportObjects(name);
+	// start undo action
+	project.undoHistory().createUndoPoint( _("Raw import of ") + name, ResourceManager::get().getIcon("import") ); 
+	Palette *pal = 0;
 
-	if( !project.checkObjectRequirements("BMP16CANVAS") ) {
-		Storage& s = impS.createObject("PAL2");
+	if( !project.checkObjectRequirements("CANVAS/16/BMP") ) {
+		pal = dynamic_cast<Palette*>( project.createNewObject("PAL/16/MSX2") );
 		palname = project.createUniqueName( name + _(" Palette") );
-		storageSetObjectName( s, palname );
-		s.createItem("DEPTH", "I");
-		s.setField(0, 3);
-		// create dummy color
-		s.createItem("FIRST_COLOR", "I");
-		s.setField(0, 0);
-		s.createItem( "RGB", "[FFF]" );
-		s.setField(0, 0.0);
-		s.setField(1, 0.0);
-		s.setField(2, 0.0);
+		project.setObjectName( *pal, palname );
 	} else {
 		// get name of existing palette
-		Polka::Object *obj = project.findObjectOfTypes("PAL2,PAL1,PAL9");
-		assert(obj);
-		palname = obj->name();
+		pal = dynamic_cast<Palette*>( project.findObjectOfTypes("PAL/16/") );
+		palname = pal->name();
 	}
+
+	assert(pal);
 	
 	// create canvas
 
@@ -105,33 +99,30 @@ bool RawImporter::importToProject( Project& project )
 	memset( data, 0, size );
 	file.read( data, size );
 
-	Storage& s = impS.createObject("BMP16CANVAS");
+	Canvas *canvas = dynamic_cast<Canvas*>( project.createNewObject("CANVAS/16/BMP") );
 	std::string scname = project.createUniqueName( name + _(" Canvas") );
-	storageSetObjectName( s, scname );
+	project.setObjectName( *canvas, scname );
 
 	// size
-	Storage& sm = s.createObject("DATA_MAIN");
-	sm.createItem("DATA_SIZE", "II");
-	sm.setField( 0, m_Preview.width() );
-	sm.setField( 1, m_Preview.height() );
+	canvas->resize( m_Preview.width(), m_Preview.height(), 1, 1, true );
 
 	// palette
-	sm.createItem("PALETTE", "S");
-	sm.setField( 0, palname );
+	canvas->setPalette( *pal );
 	
 	// data
-	sm.createItem("DATA", "S");
-	std::string& cdata = sm.setDataField(0);
+	std::string cdata;
+	cdata.reserve( 2*size );
 
 	int addr = 0;
 	while( addr < size ) {
 		cdata += char( (data[addr] >> 4) & 15 );
 		cdata += char(  data[addr++]     & 15 );
 	}
+
+	canvas->setData( 0, 0, cdata.c_str(), m_Preview.width(), m_Preview.height() );
 	
 	delete [] data;
 	
-	project.finishImportObjects();
 	return true;
 }
 

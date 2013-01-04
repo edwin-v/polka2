@@ -30,11 +30,13 @@ protected:
 
 private:
 	bool tryOpenPalette( std::ifstream& stream );
+	bool tryOpenG9kPalette( std::ifstream& stream );
 	bool tryOpenBSaved( std::ifstream& stream );
 	
 	void cleanUp();
 	
 	bool checkPalette( const char *data ) const;
+	bool checkG9kPalette( const char *data ) const;
 	
 	enum BitmapType { NONE, SC5, SC6, SC7, SC8 };
 	
@@ -47,6 +49,7 @@ private:
 	int m_FileSize, m_StartAddress, m_EndAddress;
 	int m_DetectedType;
 	int m_PaletteOffset;
+	bool m_PaletteG9k;
 	
 	class BitmapPreviewWidget : public Gtk::VBox
 	{

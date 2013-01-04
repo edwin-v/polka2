@@ -15,6 +15,7 @@ public:
 
 	// palette modification
 	void setColor( int nr, double r, double g, double b );
+	void setColors( int nr, int count, double r[], double g[], double b[] );
 	
 	// palette access
 	int depth() const;
