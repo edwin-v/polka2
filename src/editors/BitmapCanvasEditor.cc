@@ -1736,8 +1736,9 @@ bool BitmapCanvasEditor::rectUpdate( guint mods )
 		}
 		int x = m_pToolMarker->x(), y = m_pToolMarker->y(), w = m_pToolMarker->width(), h = m_pToolMarker->height();
 		canvasChanged( Gdk::Rectangle( min(x, x+w)-1, min(y, y+h)-1, 3+abs(w), 3+abs(h) ) );
-		m_pToolMarker->setSize( m_DragEndX-m_DragStartX, m_DragEndY-m_DragStartY );
-		m_pToolMarker->setVisible();
+		m_pToolMarker->setSize( m_DragEndX-m_DragStartX+1, m_DragEndY-m_DragStartY+1 );
+		dynamic_cast<OverlayRectangle*>(m_pToolMarker)->setRectAroundPixels( m_ToolRectPanel.filledRectangle() );
+		m_pToolMarker->setVisible( m_DragStartX != m_DragEndX || m_DragStartY != m_DragEndY );
 		canvasChanged( Gdk::Rectangle( min(m_DragEndX, m_DragStartX)-1, min(m_DragEndY, m_DragStartY)-1,
 		                               3+abs(m_DragEndX - m_DragStartX), 3+abs(m_DragEndY - m_DragStartY) ) );
 	}
@@ -1766,6 +1767,7 @@ bool BitmapCanvasEditor::rectRelease( guint button, guint key, guint mods )
 			m_Pen.setColor( m_FGColor );
 			fillPen.setColor( m_BGColor );
 		}
+		if( !m_ToolRectPanel.filledRectangle() ) fillPen.setColor(-1);
 		// prequeue marker removal
 		int x = m_pToolMarker->x(), y = m_pToolMarker->y(), w = m_pToolMarker->width(), h = m_pToolMarker->height();
 		canvasChanged( Gdk::Rectangle( min(x, x+w)-1, min(y, y+h)-1, 3+abs(w), 3+abs(h) ) );
