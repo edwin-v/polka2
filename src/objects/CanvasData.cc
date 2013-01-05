@@ -174,25 +174,39 @@ void CanvasData::drawLine( int x1, int y1, int x2, int y2, const Pen& pen )
 
 void CanvasData::drawRect( int x1, int y1, int x2, int y2, const Pen& lpen, const Pen& fpen )
 {
-	char *dat1 = m_Data[y1];
-	char *dat2 = m_Data[y2];
+	// private class, so expect san input. Which is:
+	// x1 < m_Width, y1 < m_Height, x2 >= 0, y2 >= 0, x2 > x1, y2 > y1
+	char *dat1 = 0, *dat2 = 0;
+	if( y1 >= 0 ) dat1 = m_Data[y1];
+	if( y2 < m_Height ) dat2 = m_Data[y2];
 	char lc[4], fc[4];
 	for( int i = 0; i < m_PixSize; i++ ) {
 		lc[i] = (lpen.data()[0] >> (i*8)) & 255;
 		fc[i] = (fpen.data()[0] >> (i*8)) & 255;
 	}
 	// horizontal lines
-	for( int x = x1*m_PixSize; x <= x2*m_PixSize; x+=m_PixSize )
-		for( int i = 0; i < m_PixSize; i++ )
-			dat1[x+i] = dat2[x+i] = lc[i];
+	int sx = x1<0 ? 0 : x1*m_PixSize;
+	int dx = x2>=m_Width ? (m_Width-1)*m_PixSize : x2*m_PixSize;
+	for( int x = sx; x <= dx; x+=m_PixSize )
+		for( int i = 0; i < m_PixSize; i++ ) {
+			if( dat1 ) dat1[x+i] = lc[i];
+			if( dat2 ) dat2[x+i] = lc[i];
+		}
+	// correct horizontal boundaries to inside rectangle
+	if( x1 >= 0 ) sx += m_PixSize;
+	if( x2 < m_Width ) dx -= m_PixSize;
 	// vertical lines
 	for( int y = y1+1; y < y2; y++ ) {
+		if( y < 0 ) continue;
+		if( y >= m_Height ) break;
 		dat1 = m_Data[y];
-		for( int i = 0; i < m_PixSize; i++ )
-			dat1[x1*m_PixSize] = dat1[x2*m_PixSize] = lc[i];
+		for( int i = 0; i < m_PixSize; i++ ) {
+			if( x1 >= 0 ) dat1[x1*m_PixSize] = lc[i];
+			if( x2 < m_Width ) dat1[x2*m_PixSize] = lc[i];
+		}
 		// fill
 		if( fpen.data()[0] != -1 ) {
-			for( int x = (x1+1)*m_PixSize; x < x2*m_PixSize; x+=m_PixSize ) 
+			for( int x = sx; x <= dx; x+=m_PixSize ) 
 				for( int i = 0; i < m_PixSize; i++ )
 					dat1[x+i] = fc[i];
 		}		

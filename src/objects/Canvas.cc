@@ -376,6 +376,8 @@ void Canvas::drawRect( int x1, int y1, int x2, int y2, const Pen& lpen, const Pe
 	if( x2 < x1 ) std::swap(x1, x2);
 	if( y2 < y1 ) std::swap(y1, y2);
 
+	if( x1 >= width() || y1 >= height() || x2 < 0 || y2 < 0 ) return;
+
 	m_pData->drawRect( x1, y1, x2, y2, lpen, fpen );
 
 	// update area
