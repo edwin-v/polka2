@@ -19,7 +19,12 @@ const Gdk::ModifierType MOD_ALT = Gdk::MOD1_MASK;
 const Gdk::ModifierType MOD_LWIN = Gdk::MOD4_MASK;
 const Gdk::ModifierType MOD_RWIN = Gdk::MOD5_MASK;
 
-const Gdk::ModifierType MOD_ALL = MOD_SHIFT | MOD_CTRL | MOD_ALT | MOD_LWIN | MOD_RWIN;
+// note that the casts in the next constant are to prevent warnings when MOD_ALL is unused.
+const Gdk::ModifierType MOD_ALL = Gdk::ModifierType( guint(MOD_SHIFT) | 
+                                                     guint(MOD_CTRL)  | 
+                                                     guint(MOD_ALT)   | 
+                                                     guint(MOD_LWIN)  | 
+                                                     guint(MOD_RWIN) );
 const Gdk::ModifierType MOD_DISABLED = Gdk::RELEASE_MASK;
 
 const guint DBL_CLICK = 1<<31;
