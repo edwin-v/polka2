@@ -36,7 +36,7 @@ public:
 	class Shape {
 	public:
 		Shape();
-		~Shape();
+		virtual ~Shape();
 		
 		void setPrimaryPen( int width, double r, double g, double b, double a = 1.0, double sub = -100.0 );
 		void setSecondaryPen( int width, double r, double g, double b, double a = 1.0, double sub = -100.0  );
