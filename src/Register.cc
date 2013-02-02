@@ -25,7 +25,7 @@ void registerObjects( ObjectManager& manager )
 	manager.registerObject( new G9KPalette64Factory() );
 	manager.registerEditor( new PaletteEditorFactory() );
 
-	manager.registerObject( new TileCanvasFactory() );
+	//manager.registerObject( new TileCanvasFactory() );
 	manager.registerEditor( new TileCanvasEditorFactory() );
 	manager.registerObject( new Bmp16CanvasFactory() );
 	manager.registerEditor( new CanvasEditorFactory() );
