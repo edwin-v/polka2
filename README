@@ -1,0 +1,83 @@
+Polka 2
+=======
+
+Polka 2 is the evolution of the Polka tile editor for screens 2 and 4 of
+the MSX computer system. This version aims to be a generalised version
+of a retro graphics editor with map editting functionality.
+
+The application took form after some internal editing programmes
+collapsed under their complexity. Polka 2 needed to fill the needs of
+those attempts while maintaining more manageable code. This meant that
+Polka 2 became as much a programming exercise as a an application. Some
+of the things we tried are a completely generic user interface, full
+undo/redo functionality, normal copy/paste functionality and trying to
+find a way good way to avoid the complexity pitfalls from earlier work.
+So far we can claim partial success.
+
+The source is released under the GNU General Public License version 3.
+Check the COPYING file for the full details.
+
+If you have any comments, suggestions or would like to participate in
+the project, send a mail to edwin@infinitemsx.com or check out the
+GitHub source repository at:
+
+https://github.com/edwin-v/polka2
+
+
+Building on Linux
+=================
+
+The code uses the gtkmm3 toolkit and its dependencies. Use the package
+manager of your distribution to install the gtkmm3 development package.
+Other than that you need a reasonably modern g++ compiler with support
+for some of the c++0x/c++11 features. Building should be a simple as:
+
+make
+
+If successful, you will find an executable file in derived/bin/polka2.
+Since this does not depend on anything else, it can be copied and run
+from any location.
+
+
+Building on Windows
+===================
+
+There is no official release of gtk3 or gtkmm3 for Windows at this time.
+However, you can get a mostly functional build system from this 
+location:
+
+http://www.tarnyko.net/en/?q=node/23
+
+After installing this, you will need a few extra files to complete the
+build system by putting the following files in the gtkmm3/bin directory:
+
+mingw32-make.exe 
+=> http://sourceforge.net/projects/mingw/files/MinGW/Extension/make/make-3.82-mingw32/
+
+echo.exe
+mkdir.exe
+rm.exe
+sed.exe
+which.exe
+=> http://sourceforge.net/projects/unxutils/
+
+After this, the source can be built from this directory using the
+following command from the command shell:
+
+mingw32-make
+
+After building has completed successfully, the executable is available
+in derived\bin\polka2.exe. This can be installed anywhere.
+
+Note that the suggested build system is experimental and does not 
+include the rendering engines that would normally be present in the
+official distribution. This means that that themes will only work
+partially. So don't expect the best appearance at this time.
+
+
+Building on other systems
+=========================
+
+Other systems are currently untested. However, if a working gtkmm3
+environment can be installed and a GCC toolchain and unix shell is 
+available, it should work.

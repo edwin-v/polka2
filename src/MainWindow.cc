@@ -1,3 +1,22 @@
+/*
+	Copyright (C) 2013 Edwin Velds
+
+    This file is part of Polka 2.
+
+    Polka 2 is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Polka 2 is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Polka 2.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "MainWindow.h"
 #include "Editor.h"
 #include "ObjectPropertiesDialog.h"
@@ -460,15 +479,14 @@ void MainWindow::onViewHistory()
 void MainWindow::onHelpAbout()
 {
 	Gtk::AboutDialog ad;
-	ad.set_program_name("Polka2");
+	ad.set_program_name("Polka 2");
 	ad.set_version("0.5.pre");
-	ad.set_copyright("Copyright (c) 2010-1011 by Infinite");
-	ad.set_comments(_("Polka2 is an environment for retro development."));
-	ad.set_license(_("This software is currently licensed under the 'do as Edwin says' license."));
-	ad.set_license_type(Gtk::LICENSE_CUSTOM);
+	ad.set_copyright("Copyright (c) 2013 by Edwin Velds");
+	ad.set_comments(_("Polka 2 is an environment for retro development."));
+	ad.set_license_type(Gtk::LICENSE_GPL_3_0);
 	ad.set_website("http://www.infinitemsx.com");
 	ad.set_website_label(_("Go to the Infinite website."));
-	ad.set_authors({_("Edwin")});
+	ad.set_authors({_("Edwin Velds")});
 	ad.run();
 }
 
