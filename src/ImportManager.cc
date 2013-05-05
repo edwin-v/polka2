@@ -20,6 +20,7 @@
 #include "ImportManager.h"
 #include "Importer.h"
 #include "Project.h"
+#include "Settings.h"
 #include "Register.h"
 #include <glibmm/i18n.h>
 #include <gtkmm/stock.h>
@@ -69,6 +70,10 @@ void ImportManager::executeFileImport( Gtk::Window& parent, Project& project )
 	m_pFileChooser->set_use_preview_label(false);
 	m_pFileChooser->get_widget_for_response(Gtk::RESPONSE_OK)->set_sensitive(false);
 	
+	// set initial path
+	std::string folder = Settings::get().getString( "", "ImportPath", "" );
+	if( !folder.empty() ) m_pFileChooser->set_current_folder( folder );
+
 	// Show the dialog and wait for a user response:
 	int result = m_pFileChooser->run();
 
@@ -78,6 +83,9 @@ void ImportManager::executeFileImport( Gtk::Window& parent, Project& project )
 			m_pCurrentImporter->importToProject( project );
 			m_pCurrentImporter = 0;
 		}
+
+		// store import path
+		Settings::get().setValue( "", "ImportPath", m_pFileChooser->get_current_folder() );
 	}
 	// remove import window
 	m_pFileChooser->hide();
