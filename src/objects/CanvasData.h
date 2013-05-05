@@ -47,7 +47,7 @@ public:
 	const Palette &palette() const;
 
 	// data access
-	int data( int x, int y );
+	int data( int x, int y ) const;
 
 	// output
 	virtual void writeImage( Cairo::RefPtr<Cairo::ImageSurface> image, const Gdk::Rectangle& rect );

@@ -141,6 +141,7 @@ private:
 	
 	// signal handlers
 	void onEdit();
+	void onExport();
 	void onCreateFolder();
 	void onCreateObject();
 	void onNameEdited(const Glib::ustring& path_txt, const Glib::ustring& new_text);

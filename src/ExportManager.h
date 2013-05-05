@@ -17,47 +17,47 @@
     along with Polka 2.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _POLKA_EXPORTER_H_
-#define _POLKA_EXPORTER_H_
+#ifndef _POLKA_EXPORTMANAGER_H_
+#define _POLKA_EXPORTMANAGER_H_
 
-#include <string>
+#include <gtkmm/window.h>
+#include <gtkmm/filechooserdialog.h>
+#include <glibmm/ustring.h>
 #include <vector>
-#include <gtkmm/filefilter.h>
 
-namespace Gtk {
-	class Dialog;
-	class Window;
-}
+namespace Polka { 
 
-namespace Polka {
-
+class Exporter;
 class Project;
 class Object;
 
-class Exporter
+class ExportManager
 {
 public:
-	Exporter( const std::string& _id );
-	virtual ~Exporter();
+	static ExportManager& get();
 
-	void setObject( const Object *obj );
-	
-	virtual std::vector< Glib::RefPtr<Gtk::FileFilter> > fileFilters( const Object& obj ) const = 0;
-	virtual void setActiveFilter( Glib::RefPtr<Gtk::FileFilter> filter ) = 0;
 
-	virtual bool showExportOptions( Gtk::Window& parent );
+	// object registration
+	void registerExporter( Exporter *exp );
 
-	virtual bool exportObject( const std::string& filename ) = 0;
+	// main interface
+	bool canExport( const Object& obj );
+	void executeFileExport( /*Gtk::Window& parent,*/ Object& obj );
 
-protected:
-	const Object *m_pObject;
-
-	virtual void initObject();
-	
 private:
-	std::string m_Id;
+	ExportManager();
+	~ExportManager();
+
+	void exportOptions();
+	
+	Gtk::FileChooserDialog *m_pFileChooser;
+	std::vector<Exporter*> m_Exporters;
+	std::map<Glib::RefPtr<Gtk::FileFilter>, Exporter*> m_ActiveFilters;
+	Glib::RefPtr<Gtk::FileFilter> m_CurrentFilter;
+	Object *m_pCurrentObject;
 };
 
-} // namespace Polka
 
-#endif // _POLKA_IMPORTER_H_
+} // namespace Polka 
+
+#endif // _POLKA_IMPORTMANAGER_H_

@@ -17,7 +17,7 @@ BIN_NAME = polka2
 endif
 
 # subdirectories with source files
-SUBDIRS := objects editors import
+SUBDIRS := objects editors import export
 
 SOURCES := $(wildcard *.cc) $(foreach dir, $(SUBDIRS), $(wildcard $(dir)/*.cc))
 OBJECTS := $(SOURCES:%.cc=$(OBJ_LOCATION)/%.o)

@@ -18,9 +18,12 @@
 */
 
 #include "Exporter.h"
+#include <gtkmm/dialog.h>
 #include <iostream>
 
 namespace Polka {
+
+class Object;
 
 Exporter::Exporter( const std::string& _id )
 	: m_Id(_id)
@@ -28,6 +31,21 @@ Exporter::Exporter( const std::string& _id )
 }
 
 Exporter::~Exporter()
+{
+}
+
+void Exporter::setObject( const Object *obj )
+{
+	m_pObject = obj;
+	initObject();
+}
+
+bool Exporter::showExportOptions( Gtk::Window& /*parent*/ )
+{
+	return false;
+}
+
+void Exporter::initObject()
 {
 }
 

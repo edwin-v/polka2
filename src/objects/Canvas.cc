@@ -308,7 +308,7 @@ Cairo::RefPtr<Cairo::ImageSurface> Canvas::getImage()
 	return m_Image;
 }
 
-int Canvas::data( int x, int y )
+int Canvas::data( int x, int y ) const
 {
 	return m_pData->data( x, y );
 }

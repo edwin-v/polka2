@@ -25,9 +25,11 @@ namespace Polka {
 
 class ObjectManager;
 class ImportManager;
+class ExportManager;
 
 void registerObjects( ObjectManager& manager );
 void registerImporters( ImportManager& manager );
+void registerExporters( ExportManager& manager );
 
 } // namespace Polka
 

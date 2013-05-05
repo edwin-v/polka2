@@ -89,7 +89,7 @@ public:
 	bool getClipped() const;
 	
 	// data access
-	virtual int data( int x, int y );
+	virtual int data( int x, int y ) const;
 	virtual const Palette& palette() const;
 
 	virtual Brush *createBrushFromRect( int x, int y, int w, int h, int bg );

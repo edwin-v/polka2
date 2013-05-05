@@ -20,6 +20,8 @@
 #include "Register.h"
 #include "ObjectManager.h"
 #include "ImportManager.h"
+#include "ExportManager.h"
+
 #include "MSX1Palette.h"
 #include "MSX2Palette.h"
 #include "G9KPalette.h"
@@ -33,6 +35,8 @@
 #include "BitmapScreenImport.h"
 #include "ImageImport.h"
 #include "RawImport.h"
+
+#include "MSXBitmapExport.h"
 
 namespace Polka {
 
@@ -55,6 +59,11 @@ void registerImporters( ImportManager& manager )
 	manager.registerImporter( new BitmapScreenImporter() );
 	manager.registerImporter( new ImageImporter() );
 	manager.registerImporter( new RawImporter() );
+}
+
+void registerExporters( ExportManager& manager )
+{
+	manager.registerExporter( new MSXBitmapExporter() );
 }
 
 }

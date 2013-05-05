@@ -24,6 +24,7 @@
 #include "Functions.h"
 #include "StorageHelpers.h"
 #include "ResourceManager.h"
+#include "ExportManager.h"
 #include <gtkmm/messagedialog.h>
 #include <glibmm/i18n.h>
 #include <iostream>
@@ -97,6 +98,8 @@ void Project::init()
 	                      sigc::mem_fun(*this, &Project::onEdit));
 	m_refActionGroup->add(Gtk::Action::create("ContextCreateFolder", _("Create _Folder")),
 	                      sigc::mem_fun(*this, &Project::onCreateFolder));
+	m_refActionGroup->add(Gtk::Action::create("ContextExport", _("E_xport")),
+	                      sigc::mem_fun(*this, &Project::onExport));
 	ObjectManager& om = ObjectManager::get();
 	for( unsigned int i = 0; i < om.numObjectTypes(); i++ )
 		m_refActionGroup->add(Gtk::Action::create(
@@ -119,6 +122,8 @@ void Project::init()
 		"    <menuitem action='EditCopy'/>"
 		"    <menuitem action='EditPaste'/>"
 		"    <menuitem action='EditDelete'/>"
+		"    <separator/>"
+		"    <menuitem action='ContextExport'/>"
 		"    <separator/>"
 		"    <menuitem action='EditRename'/>"
 		"    <menuitem action='EditProperties'/>"
@@ -195,6 +200,8 @@ void Project::onSelectionChanged()
 	//   Copy          Copy           Copy
 	//   Paste         Paste          Paste
 	//   Delete        Delete         Delete
+	//                                ------
+	//                                Export
 	//   ------        ------         ------
 	//   Rename        Rename         Rename
 	//   Properties    Properties     Properties
@@ -205,7 +212,7 @@ void Project::onSelectionChanged()
 	// allowed options
 	bool edit = false, folder = false,
 	     cut = false, copy = false, paste = false, del = false,
-	     rename = false, props = false;
+	     exportobj = false, rename = false, props = false;
 	
 	Gtk::TreeModel::iterator rit = get_selection()->get_selected();
 	
@@ -226,6 +233,8 @@ void Project::onSelectionChanged()
 			// delete if nothing depends on it
 			if( obj->canRemove() )
 				del = true;
+			// can this object be exported?
+			exportobj = ExportManager::get().canExport( *obj );
 		} else {
 			// row is an object folder
 			folder = props = true;
@@ -260,6 +269,7 @@ void Project::onSelectionChanged()
 	m_refUIManager->get_action("/ui/TreePopup/EditCopy")->set_sensitive(copy);
 	m_refUIManager->get_action("/ui/TreePopup/EditPaste")->set_sensitive(paste);
 	m_refUIManager->get_action("/ui/TreePopup/EditDelete")->set_sensitive(del);
+	m_refUIManager->get_action("/ui/TreePopup/ContextExport")->set_visible(exportobj);
 	m_refUIManager->get_action("/ui/TreePopup/EditRename")->set_sensitive(rename);
 	m_refUIManager->get_action("/ui/TreePopup/EditProperties")->set_sensitive(props);
 	m_pNameCellRenderer->set_property("editable", rename);
@@ -602,6 +612,18 @@ void Project::onEdit()
 		if( !objEdt ) return;
 		objEdt->setObject(obj);
 		m_SignalEditObject.emit( objEdt );
+	}
+}
+
+void Project::onExport()
+{
+	Gtk::TreeModel::iterator rit = get_selection()->get_selected();
+	
+	if( rit ) {
+		Gtk::TreeModel::Row row = *rit;
+		Polka::Object *obj = (Polka::Object*)row[m_Cols.m_pObject];
+		if( !obj ) return;
+		ExportManager::get().executeFileExport( /**(get_transient_for()),*/ *obj );
 	}
 }
 

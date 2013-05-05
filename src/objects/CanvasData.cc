@@ -109,7 +109,7 @@ const Palette& CanvasData::palette() const
 	return m_Canvas.palette();
 }
 
-int CanvasData::data( int x, int y )
+int CanvasData::data( int x, int y ) const
 {
 	int result = 0;
 	for( int a = x*m_PixSize; a < x*m_PixSize+m_PixSize; a++ )
