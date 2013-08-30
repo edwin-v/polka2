@@ -34,15 +34,15 @@ ColorSelector::ColorSelector( int width, int height, bool display_selection )
 	            Gdk::LEAVE_NOTIFY_MASK );
 	
 	// init markers
-	m_pCursor = new OverlayRectangle( 0, 0, 1, 1, false );
-	m_pCursor->setSecondaryPen(1, 0, 0, 0);
-	m_pCursor->setPattern(1);
-	m_Overlay.add( 10, m_pCursor );
-	m_pSecondaryMarker = new OverlayRectangle( 0, 0, 1, 1, false );
-	m_pSecondaryMarker->setPrimaryPen( 1, 1, 0, 0 );
-	m_pSecondaryMarker->setSecondaryPen( 1, 0, 0, 0 );
-	m_pSecondaryMarker->setPattern(1);
-	m_Overlay.add( 5, m_pSecondaryMarker );
+	m_rCursor = RectangleShape::create(RectangleShape::FULL_INSIDE);
+	m_rCursor->setBaseWidth(1);
+	m_rCursor->setLineDashSize(1);
+	add( 10, m_rCursor );
+	m_rSecondaryMarker = RectangleShape::create(RectangleShape::FULL_INSIDE);
+	m_rSecondaryMarker->setLineColor( 1, 0, 0 );
+	m_rSecondaryMarker->setBaseWidth(1);
+	m_rSecondaryMarker->setLineDashSize(1);
+	add( 5, m_rSecondaryMarker );
 }
 
 ColorSelector::~ColorSelector()
@@ -258,11 +258,11 @@ bool ColorSelector::on_draw( const Cairo::RefPtr<Cairo::Context>& cr )
 				// draw selection marker
 				if( m_Selection ) {
 					if( c == m_PriColor ) {
-						m_pCursor->setLocation( cx, cy );
-						m_pCursor->setSize( cxn, cyn );
+						m_rCursor->setLocation( cx, cy );
+						m_rCursor->setSize( cxn, cyn );
 					} else if( c == m_SecColor ) {
-						m_pSecondaryMarker->setLocation( cx, cy );
-						m_pSecondaryMarker->setSize( cxn, cyn );
+						m_rSecondaryMarker->setLocation( cx, cy );
+						m_rSecondaryMarker->setSize( cxn, cyn );
 					}
 				}
 
@@ -279,13 +279,12 @@ bool ColorSelector::on_draw( const Cairo::RefPtr<Cairo::Context>& cr )
 		}
 		if( m_Selection ) {
 			// draw overlays
-			m_pCursor->setVisible( m_PriColor != -1 );
-			m_pSecondaryMarker->setVisible( m_SecColor != -1 );
-			m_Overlay.paint( cr );
+			m_rCursor->setVisible( m_PriColor != -1 );
+			m_rSecondaryMarker->setVisible( m_SecColor != -1 );
 		}
 	}
 
-	return true;
+	return ShapeDrawingArea::on_draw(cr);
 }
 
 bool ColorSelector::on_button_press_event(GdkEventButton* event)

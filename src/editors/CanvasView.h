@@ -20,9 +20,9 @@
 #ifndef _POLKA_CANVASVIEW_H_
 #define _POLKA_CANVASVIEW_H_
 
-#include <gtkmm/drawingarea.h>
 #include <cairomm/surface.h>
-#include "OverlayPainter.h"
+#include "ShapeDrawingArea.h"
+#include "ShapeDrawingObjects.h"
 #include "GridSelector.h"
 #include "AccelBase.h"
 
@@ -30,7 +30,7 @@ namespace Polka {
 
 class Canvas;
 
-class CanvasView : public Gtk::DrawingArea, public AccelBase
+class CanvasView : public ShapeDrawingArea, public AccelBase
 {
 public:
 	CanvasView( const std::string& _id );
@@ -78,7 +78,9 @@ private:
 	bool m_ViewLocked;
 	int m_UnlockDX, m_UnlockDY, m_UnlockScale;
 
-	OverlayPainter m_Overlay;
+	// shape objects
+	Cairo::RefPtr<GridShape> m_rPixelGrid, m_rTileGrid;
+
 	GridSelector m_GridSelect;
 	
 	void clipDeltas( int& ox, int& oy, bool adjust_drag = false );

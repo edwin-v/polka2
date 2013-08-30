@@ -30,10 +30,13 @@ CanvasView::CanvasView( const std::string& _id )
 	add_events(Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::BUTTON2_MOTION_MASK | Gdk::SCROLL_MASK);
 
 	// add pixel grid
-	m_Overlay.add( 0, new OverlayGrid( 1, 1 ) );
+	m_rPixelGrid = GridShape::create();
+	m_rPixelGrid->setSize(1,1);
+	add(0, m_rPixelGrid);
 	changeGrid(0);
 	// add tile grid
-	m_Overlay.add( 1, new OverlayGrid( 8, 8 ) );
+	m_rTileGrid = GridShape::create();
+	add(1, m_rTileGrid);
 	changeGrid(1);
 
 	m_GridSelect.signalPixelGridChanged().connect( sigc::bind<int>(sigc::mem_fun(*this, &CanvasView::changeGrid), 0) );
@@ -110,27 +113,32 @@ int CanvasView::dy() const
 void CanvasView::changeGrid( int id )
 {
 	GridSelector::Type t = id==0 ? m_GridSelect.pixelGrid() : m_GridSelect.tileGrid();
+	Cairo::RefPtr<GridShape> grid = id==0 ? m_rPixelGrid : m_rTileGrid;
 	
 	switch( t ) {
 		case GridSelector::GRID_DOT:
-			dynamic_cast<OverlayGrid&>(m_Overlay.shape(id)).setType( OverlayGrid::GRID_DOTS );
-			m_Overlay.shape(id).setPrimaryPen( 1, 0, 0, 0 );
-			m_Overlay.shape(id).setSecondaryPen( 1, 1, 1, 1 );
-			m_Overlay.shape(id).setVisible();
+			grid->setType( GridShape::GRID_DOTS );
+			grid->setBaseWidth( 1 );
+			grid->setBaseColor( 0, 0, 0 );
+			grid->setLineWidth( 1 );
+			grid->setLineColor( 1, 1, 1 );
+			grid->setVisible();
 			break;
 		case GridSelector::GRID_SHADE:
-			dynamic_cast<OverlayGrid&>(m_Overlay.shape(id)).setType( OverlayGrid::GRID_LINES );
+			grid->setType( GridShape::GRID_SHADES );
+			grid->setBaseWidth( 1 );
+			grid->setLineWidth( 1 );
 			if( id == 0 ) {
-				m_Overlay.shape(0).setPrimaryPen( 1, 0, 0, 0, 0.2, -0.5 );
-				m_Overlay.shape(0).setSecondaryPen( 1, 1, 1, 1, 0.1, 0.5 );
+				grid->setBaseColor( 0, 0, 0, 0.2 );
+				grid->setLineColor( 1, 1, 1, 0.1 );
 			} else {
-				m_Overlay.shape(1).setPrimaryPen( 1, 0, 0, 0, 0.5, -0.5 );
-				m_Overlay.shape(1).setSecondaryPen( 1, 1, 1, 1, 0.3, 0.5 );
+				grid->setBaseColor( 0, 0, 0, 0.3 );
+				grid->setLineColor( 1, 1, 1, 0.15 );
 			}
-			m_Overlay.shape(id).setVisible();
+			grid->setVisible();
 			break;
 		default:
-			m_Overlay.shape(id).setVisible(false);
+			grid->setVisible(false);
 			break;
 	}
 	
@@ -270,13 +278,13 @@ void CanvasView::setFastUpdate( bool fast )
 	if( fast ) {
 		// disable slow drawing features
 		if( m_GridSelect.pixelGrid() == GridSelector::GRID_SHADE )
-			m_Overlay.shape(0).setVisible(false);
+			m_rPixelGrid->setVisible(false);
 	} else {
 		// reset features
 		if( m_GridSelect.pixelGrid() != GridSelector::GRID_OFF )
-			m_Overlay.shape(0).setVisible();
+			m_rPixelGrid->setVisible();
 		if( m_GridSelect.tileGrid() != GridSelector::GRID_OFF )
-			m_Overlay.shape(1).setVisible();
+			m_rTileGrid->setVisible();
 	}
 }
 
@@ -303,11 +311,16 @@ bool CanvasView::on_draw( const Cairo::RefPtr<Cairo::Context>& cr )
 	// reset scaling for drawing cursors		
 	cr->restore();
 
-	m_Overlay.shape(1).setSize( m_pCanvas->tileGridWidth(), m_pCanvas->tileGridHeight() );
-	m_Overlay.shape(1).setLocation( m_pCanvas->tileGridHorOffset(), m_pCanvas->tileGridVerOffset() );
-	m_Overlay.setImageSize( m_pCanvas->width(), m_pCanvas->height() );
-	m_Overlay.setCoordSpace( dx(), dy(), hscale(), vscale() );
-	m_Overlay.paint(cr);
+	// set coord space
+	setSize( m_pCanvas->width(), m_pCanvas->height() );
+	setOffset( dx(), dy() );
+	setScale( hscale(), vscale() );
+
+	// set tile grid size
+	m_rTileGrid->setSize( m_pCanvas->tileGridWidth(), m_pCanvas->tileGridHeight() );
+	m_rTileGrid->setLocation( m_pCanvas->tileGridHorOffset(), m_pCanvas->tileGridVerOffset() );
+
+	ShapeDrawingArea::on_draw(cr);
 	
 	return true;
 }

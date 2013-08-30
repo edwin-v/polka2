@@ -80,8 +80,6 @@ protected:
 	
 	void createUndo( const Glib::ustring& text, const Glib::RefPtr<Gdk::Pixbuf>& icon );
 
-	OverlayPainter m_Overlay;
-
 private:
 	bool m_DragTool, m_PrimaryTool;
 
@@ -105,9 +103,9 @@ private:
 	int m_CurrentTool;
 	int m_ActiveTool;
 	bool m_ToolHold;
-	OverlayPainter::Shape *m_pToolMarker;
-	OverlayBrush m_BrushMarker, m_SelectionMarker;
-	
+	Cairo::RefPtr<ShapeDrawingArea::Shape> m_rToolMarker;
+	Cairo::RefPtr<BrushShape> m_rBrushMarker, m_rSelectionMarker;
+	Cairo::RefPtr<RectangleShape> m_rSelectionRect;	
 
 	ToolSelectPanel m_ToolSelectPanel;
 	//ToolGridPanel m_ToolGridPanel;
@@ -129,6 +127,7 @@ private:
 	bool toolUpdate( guint mods );
 	bool toolRelease( guint button, guint key, guint mods );
 
+	void setShapeLine( const Cairo::RefPtr<LineShapeBase>& shape, bool interactive );
 	void screenDraw( int x, int y, bool use_brush = false );
 	
 	void changeTool( int id );

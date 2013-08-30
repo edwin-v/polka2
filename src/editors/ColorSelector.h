@@ -20,8 +20,8 @@
 #ifndef _POLKA_COLORSELECTOR_H_
 #define _POLKA_COLORSELECTOR_H_
 
-#include <gtkmm/drawingarea.h>
-#include "OverlayPainter.h"
+#include "ShapeDrawingArea.h"
+#include "ShapeDrawingObjects.h"
 #include "Palette.h"
 #include "Defs.h"
 
@@ -42,7 +42,7 @@ class Palette;
  * be used to decide whether selections should be shown.
  */
 
-class ColorSelector: public Gtk::DrawingArea 
+class ColorSelector : public ShapeDrawingArea 
 {
 public:
 	ColorSelector( int width = -1, int height = -1, bool display_selection = true );
@@ -77,8 +77,7 @@ protected:
 private:
 	// selector appearance
 	const Palette *m_pPalette;
-	OverlayPainter m_Overlay;
-	OverlayRectangle *m_pCursor, *m_pSecondaryMarker;
+	Cairo::RefPtr<RectangleShape> m_rCursor, m_rSecondaryMarker;
 	int m_Width, m_Height, m_ReqWidth, m_ReqHeight;
 	bool m_Selection;
 	bool m_Dragging;
